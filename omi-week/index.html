@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>神歐迷的一週</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#0A6CC2; --green:#35A53A; --sakuyo:#1F5FB0; --ink:#1D2B3A; --ink-soft:#5A6878; --gold:#F2A93B;
+  --bg:#E4F1FA; --surface:#FFFFFF; --line:#CFE0EC; --chip:#EEF6EC;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --ink:#E8F0F7; --ink-soft:#A7B6C4; --bg:#0E1A25; --surface:#172634; --line:#2A3D4F; --chip:#1F3327; --sakuyo:#7FB2F0; }
+}
+:root[data-theme="dark"]{ --ink:#E8F0F7; --ink-soft:#A7B6C4; --bg:#0E1A25; --surface:#172634; --line:#2A3D4F; --chip:#1F3327; --sakuyo:#7FB2F0; }
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;height:100%;overflow:hidden;background:#101c3a;color:var(--ink);font-family:"Chiron GoRound TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:none}
+#game{position:fixed;left:0;top:0;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none}
+.pix{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+#hud{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 0;pointer-events:none;z-index:2}
+.bar{height:10px;border:2px solid #1D2B3A;border-radius:6px;background:#E3E8ED;overflow:hidden}
+.bar i{display:block;height:100%;width:0}
+#xp i{background:#7CC6F2}
+.row{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.pill{background:rgba(255,255,255,.93);color:#1D2B3A;border:2px solid #1D2B3A;border-radius:10px;padding:2px 8px;font-weight:800;font-size:.84rem;white-space:nowrap}
+#hpWrap{flex:1;min-width:120px;max-width:220px;display:flex;align-items:center;gap:6px}
+#hpWrap .bar{flex:1;height:12px}
+#hp i{background:#35A53A}
+#pauseBtn{pointer-events:auto;font:inherit;font-weight:800;background:#fff;color:#1D2B3A;border:2px solid #1D2B3A;border-radius:10px;padding:3px 10px;cursor:pointer;margin-left:auto}
+#bossBar{margin-top:6px;background:rgba(29,43,58,.85);border-radius:10px;padding:4px 8px;color:#fff;font-weight:800;font-size:.85rem}
+#bossBar .bar{margin-top:3px;background:#3a4a5c;border-color:#fff}
+#bossFill{background:#ff6b5a}
+#slots{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.srow{display:flex;gap:3px}
+.slot{width:32px;height:38px;background:rgba(255,255,255,.9);border:2px solid #1D2B3A;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1D2B3A}
+.slot.p{background:rgba(238,246,236,.95)}
+.slot.empty{opacity:.35}
+.slot span{font-size:.55rem;font-weight:800;line-height:1.1}
+.slot.evo{border-color:var(--gold);background:#FFF6D6}
+#debuffs{display:flex;gap:4px}
+#banner{position:fixed;left:50%;top:30%;transform:translate(-50%,-10px);opacity:0;transition:opacity .3s,transform .3s;background:rgba(255,255,255,.95);color:#1D2B3A;border:3px solid #1D2B3A;border-radius:14px;padding:8px 16px;text-align:center;pointer-events:none;z-index:3;min-width:220px}
+#banner.show{opacity:1;transform:translate(-50%,0)}
+#banner b{display:block;font-size:1.1rem;color:#0A6CC2}
+#banner span{font-weight:600;font-size:.92rem}
+.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top,0px)) 12px max(14px,env(safe-area-inset-bottom,0px));background:rgba(16,28,58,.6);z-index:5}
+.overlay.show{display:flex}
+.panel{background:var(--surface);color:var(--ink);border:3px solid #1D2B3A;border-radius:22px;width:100%;max-width:480px;max-height:100%;overflow:auto;padding:18px 16px;text-align:center}
+.panel h2{font-size:1.3rem;font-weight:800;margin:0 0 12px}
+.panel h3{font-size:1.05rem;font-weight:800;margin:14px 0 8px;text-align:left}
+.panel p{color:var(--ink-soft);line-height:1.6;margin:6px 0}
+.btns{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;font:inherit;font-weight:800;font-size:1.05rem;padding:12px 10px;border-radius:14px;border:3px solid #1D2B3A;background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--blue);color:#fff}.btn.green{background:var(--green);color:#fff}
+.btn:focus-visible,.card:focus-visible,.sel:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.small{font-size:.82rem}
+/* 選關 */
+#select{background:radial-gradient(circle at 50% 40%,#1f3a78 0%,#101c3a 70%);flex-direction:column}
+#select h1{color:#fff;font-size:1.6rem;margin:0 0 4px;text-shadow:0 3px 0 #0A6CC2;letter-spacing:.06em}
+#selLetters{display:flex;gap:6px;justify-content:center;margin:-4px 0 12px}
+#selLetters span{width:26px;height:28px;display:grid;place-items:center;font-weight:800;border-radius:7px;border:2px solid #3E5468;color:#3E5468;background:rgba(255,255,255,.06)}
+#selLetters span.got{background:#1F5FB0;border-color:#F8B41B;color:#fff}
+#selProg{color:#bfe6ff;font-weight:600;margin:0 0 12px;font-size:.9rem}
+#selGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(96vw,520px)}
+.sel{position:relative;aspect-ratio:1/1.05;background:#0d1733;border:3px solid #4a6fb5;border-radius:12px;color:#fff;font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:6px;box-shadow:inset 0 0 0 3px #0d1733,inset 0 0 0 5px #27447f}
+.sel canvas{max-width:86%;max-height:60%}
+.sel b{font-size:1rem}
+.sel span{font-size:.72rem;color:#bfe6ff;line-height:1.2}
+.sel.on{border-color:#ffd95a;animation:blink .6s steps(2) infinite}
+@keyframes blink{50%{border-color:#fff}}
+.sel.center{background:#e4f1fa;border-color:#ffd95a;cursor:default}
+.sel.center b{color:#1D2B3A}
+.sel.locked b{color:#8fa3c0}
+.sel .done{position:absolute;right:6px;top:4px;font-style:normal;background:#35A53A;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem}
+.selHint{color:#8fa3c0;font-size:.8rem;margin-top:10px}
+/* 關卡介紹 */
+#intro .panel{background:repeating-linear-gradient(135deg,#0d1733 0 14px,#13214a 14px 28px);color:#fff;border-color:#ffd95a}
+#intro p{color:#bfe6ff}
+#inDay{font-size:.95rem;color:#ffd95a;font-weight:800}
+#inBoss{font-size:1.7rem;margin:4px 0;letter-spacing:.08em;text-shadow:0 3px 0 #0A6CC2}
+#inBossImg{display:flex;justify-content:center;margin:8px 0}
+#intro h3{color:#ffd95a}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chipx{display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,255,255,.08);border-radius:10px;padding:6px 8px;font-size:.75rem;font-weight:600;min-width:62px}
+#inWeak{color:#ffd95a!important;font-weight:800}
+.chipx.pick{font:inherit;font-size:.75rem;font-weight:600;color:inherit;border:2px solid transparent;cursor:pointer}
+.chipx.pick.on{border-color:#ffd95a;background:rgba(255,217,90,.18)}
+.chipx em{font-style:normal;font-size:.65rem;font-weight:800;color:#1D2B3A;background:#ffd95a;border-radius:5px;padding:0 4px}
+/* 升級卡 */
+#cards{display:flex;flex-direction:column;gap:10px}
+.card{position:relative;display:flex;gap:12px;align-items:center;text-align:left;font:inherit;background:var(--surface);color:var(--ink);border:3px solid #1D2B3A;border-radius:16px;padding:10px 12px;cursor:pointer}
+.card:hover{background:var(--chip)}
+.card canvas{flex:none;background:#FFF6D6;border-radius:10px;padding:3px;box-sizing:content-box}
+.card.pas canvas{background:#EEF6EC}
+.card.sak{border-color:var(--sakuyo)}
+.card.sak canvas{background:#FFF1E2}
+.card .sakb{display:inline-flex;align-items:center;gap:3px;margin-left:6px;font-size:.8rem;font-weight:800;color:var(--sakuyo);vertical-align:1px}
+.card .sakb canvas{background:none;padding:0;border-radius:0}
+.card.evo{border-color:var(--gold);background:#FFF6D6;color:#1D2B3A}
+.card b{font-size:1.08rem}
+.card .tag{margin-left:8px;font-size:.76rem;font-weight:800;color:#fff;background:var(--blue);border-radius:6px;padding:1px 6px}
+.card.pas .tag{background:var(--green)}
+.card.evo .tag{background:var(--gold)}
+.card p{margin:4px 0 0;font-size:.88rem;line-height:1.5;color:inherit;opacity:.9}
+.card small{display:block;margin-top:3px;font-size:.74rem;opacity:.65;line-height:1.4}
+.kbd{position:absolute;right:10px;top:8px;font-size:.72rem;font-weight:800;opacity:.45}
+/* 圖鑑 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;text-align:left}
+.cell{border:2px solid var(--line);border-radius:12px;padding:8px}
+.cell canvas{margin:0 auto 6px;max-width:100%}
+.cell b{display:block;font-size:.95rem}
+.cell span{display:block;font-size:.74rem;line-height:1.45;color:var(--ink-soft)}
+.cell.locked canvas{filter:brightness(0) opacity(.3)}
+#cardImg{width:100%;max-height:54vh;object-fit:contain;border-radius:10px;display:block}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="神歐迷的一週遊戲畫面"></canvas>
+<div id="hud" hidden>
+  <div class="bar" id="xp"><i id="xpFill"></i></div>
+  <div class="row">
+    <div id="hpWrap"><span class="pill">元氣</span><div class="bar" id="hp"><i id="hpFill"></i></div></div>
+    <span class="pill" id="stageLbl"></span><span class="pill" id="remain"></span><span class="pill" id="lvl">Lv 1</span>
+    <button id="pauseBtn" aria-label="暫停">Ⅱ</button>
+  </div>
+  <div class="row"><span class="pill small" id="kills">淨化 0</span><div id="debuffs"></div></div>
+  <div id="bossBar" hidden><span id="bossName"></span><div class="bar"><i id="bossFill"></i></div></div>
+  <div id="slots"></div>
+</div>
+<div id="banner"><b id="bnA"></b><span id="bnB"></span></div>
+
+<div class="overlay" id="select">
+  <h1>神歐迷的一週</h1>
+  <p id="selProg"></p>
+  <div id="selLetters" aria-label="SAKUYO 字母收集"></div>
+  <div id="selGrid"></div>
+  <p class="selHint">選一天開始淨化煩惱　方向鍵移動，Enter 決定</p>
+</div>
+
+<div class="overlay" id="intro"><div class="panel">
+  <div id="inDay"></div>
+  <div id="inBoss"></div>
+  <div id="inBossImg"></div>
+  <p id="inText"></p>
+  <p id="inWeak"></p>
+  <h3>本日煩惱</h3><div class="chips" id="inEnemies"></div>
+  <h3>推薦商品</h3><div class="chips" id="inItems"></div>
+  <h3 id="inStartH">出發商品</h3><div class="chips" id="inStart"></div>
+  <p class="small" id="inStartHint"></p>
+  <p class="small">手機：按住畫面拖曳移動　電腦：方向鍵或 WASD</p>
+  <div class="btns"><button class="btn" id="backBtn">返回</button><button class="btn primary" id="goBtn">出發</button></div>
+</div></div>
+
+<div class="overlay" id="level"><div class="panel"><h2 id="lvTitle">升級！</h2><div id="cards"></div></div></div>
+<div class="overlay" id="pauseOv"><div class="panel"><h2>暫停中</h2><div class="btns"><button class="btn primary" id="resumeBtn">繼續</button><button class="btn" id="quitBtn">放棄這關</button></div></div></div>
+
+<div class="overlay" id="dex"><div class="panel">
+  <h2>圖鑑</h2>
+  <p class="small">玩過的商品和遇過的煩惱會解鎖說明。</p>
+  <h3>商品</h3><div class="grid" id="dexItems"></div>
+  <h3>煩惱</h3><div class="grid" id="dexEnemies"></div>
+  <div class="btns"><button class="btn primary" id="dexClose">返回選關</button></div>
+</div></div>
+
+<div class="overlay" id="result"><div class="panel">
+  <h2 id="resTitle"></h2>
+  <img id="cardImg" alt="這一關的淨化明細卡">
+  <p class="small" id="saveHint" hidden>長按或按右鍵點圖片即可儲存明細卡。</p>
+  <div class="btns"><button class="btn green" id="dlBtn">下載明細卡</button><button class="btn primary" id="againBtn">再挑戰</button></div>
+  <div class="btns"><button class="btn" id="selBtn">回選關畫面</button></div>
+</div></div>
+<script>
+(function(){
+"use strict";
+// ===== 01-mascot.js =====
+// ===== 神歐迷像素角色：依設定圖量測的形狀逐格取樣 =====
+const C={ink:'#1d2b3a',w:'#ffffff',s1:'#e6eaee',s2:'#cfd6de',b:'#0a86cf',bd:'#066ba6',g:'#94b72a',pk:'#f07b8a'};
+function cap(px,py,ax,ay,bx,by,r0,r1){const vx=bx-ax,vy=by-ay,L2=vx*vx+vy*vy||1;let t=((px-ax)*vx+(py-ay)*vy)/L2;t=Math.max(0,Math.min(1,t));const cx=ax+vx*t,cy=ay+vy*t,r=r0+(r1-r0)*t;return((px-cx)**2+(py-cy)**2<=r*r)?t:-1;}
+function ell(px,py,cx,cy,rx,ry,rot){let dx=px-cx,dy=py-cy;if(rot){const c=Math.cos(-rot),s=Math.sin(-rot);const x=dx*c-dy*s,y=dx*s+dy*c;dx=x;dy=y;}return(dx/rx)**2+(dy/ry)**2;}
+function inPoly(x,y,poly){let ins=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins;}return ins;}
+const PRI={far:0,body:1,leg:2,ant:3,head:4,arm:5};
+const NOLINE=new Set(['body|leg','leg|body','ant|head','head|ant']);
+const GREEN_P=[[0,-0.3],[0.66,-0.3],[0.66,0],[0.44,0.16],[0.54,0.22],[0,0.28]];
+const BLUE_P=[[0.45,0.16],[0.64,0.2],[1.05,0.3],[1.05,0.5],[0.5,0.58],[0.08,0.74],[-0.05,0.74],[-0.05,0.52],[0.5,0.34]];
+function raster(sampler,o){
+  const {U,X0,Y0,GW,GH}=o;
+  const col=new Array(GW*GH).fill(null),lay=new Array(GW*GH).fill(null),mouth=new Array(GW*GH).fill(false);
+  for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){const x=X0+(i+0.5)*U,y=Y0+(j+0.5)*U;if(y>640)continue;const r=sampler(x,y);if(r){const k=j*GW+i;col[k]=r.c;lay[k]=r.l;if(r.m)mouth[k]=true;}}
+  const idx=(i,j)=>(i<0||j<0||i>=GW||j>=GH)?-1:j*GW+i;const out=[];
+  for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){const k=j*GW+i,l=lay[k];const ns=[idx(i-1,j),idx(i+1,j),idx(i,j-1),idx(i,j+1)];
+    if(l===null){if(ns.some(n=>n>=0&&lay[n]!==null))out.push(k);continue;}
+    let hit=false;for(const n of ns){if(n<0)continue;const m=lay[n];if(m===null||m===l||NOLINE.has(l+'|'+m))continue;if(PRI[m]>PRI[l]){hit=true;break;}}
+    if(!hit&&mouth[k]&&ns.some(n=>n<0||!mouth[n]))hit=true;
+    if(hit)out.push(k);}
+  out.forEach(k=>{col[k]=C.ink;});
+  return {w:GW,h:GH,g:col};
+}
+const ARMS_F=[[116,452,86,530],[359,452,389,530]];
+function frontSampler(o){return (x,y)=>{
+  const yb=y-(o.bob||0);
+  for(let i=0;i<2;i++){const a=ARMS_F[i];const sw=(o.arm||0)*(i?-1:1);const t=cap(x,yb,a[0],a[1],a[2],a[3]+sw,24,22);if(t>=0)return{c:(t>0.18&&t<0.4)?C.b:C.w,l:'arm'};}
+  if(ell(x,yb,235,262,205,168)<=1){
+    if(o.back){return{c:ell(x,yb,235,240,172,150)>1?C.s1:C.w,l:'head'};}
+    if(yb>=296&&ell(x,yb,240,296,50,64)<=1)return{c:yb>322?C.pk:C.ink,l:'head',m:true};
+    if(ell(x,yb,150,248,50,48)<=1&&ell(x,yb,150,248,17,24)>1)return{c:C.b,l:'head'};
+    if(ell(x,yb,325,245,62,63)<=1&&ell(x,yb,313,245,21,32)>1)return{c:C.g,l:'head'};
+    let c=C.w;if(ell(x,yb,222,248,200,160)>1)c=C.s1;return{c,l:'head'};}
+  if(ell(x,yb,233,40,40,23)<=1||(x>=220&&x<=248&&yb>=50&&yb<=110))return{c:C.w,l:'ant'};
+  const inTorso=x>=143&&x<=332&&yb>=410&&yb<=578;
+  const legIn=(cx,lift)=>{const yy=y+lift;return Math.abs(x-cx)<=43&&yy>=556&&yy<=640&&(yy<=606||ell(x,yy,cx,606,43,34)<=1);};
+  const lL=o.lL||0,lR=o.lR||0,inL=legIn(187,lL),inR=legIn(293,lR);
+  if(inTorso||inL||inR){let c=C.w;
+    const yy=inTorso?yb:(inL?y+lL:y+lR);const u=(x-143)/189,v=(yy-452)/190;
+    if(!inTorso&&yy>=598)c=C.b;
+    else if(inTorso&&!o.back){if(inPoly(u,v,GREEN_P))c=C.g;else if(inPoly(u,v,BLUE_P))c=C.b;}
+    if(c===C.w){if(o.back){if(inTorso&&Math.abs(x-212)<24)c=C.s1;}else if(x>304)c=C.s1;}
+    return{c,l:inTorso?'body':'leg'};}
+  return null;};}
+function sideSampler(p){return (x,y)=>{
+  const yb=y-p.sy;
+  const limb=(sx,sy,a,r,far)=>{const L=44,ex=sx+Math.sin(a)*L,ey=sy+Math.cos(a)*L;const t=cap(x,yb,sx,sy,ex,ey,r,r-1);if(t>=0)return{c:(t>0.1&&t<0.32)?(far?C.bd:C.b):(far?C.s2:C.w),l:far?'far':'arm'};if(ell(x,yb,ex+Math.sin(a)*6,ey+Math.cos(a)*6,r+8,r+7)<=1)return{c:far?C.s2:C.w,l:far?'far':'arm'};return null;};
+  let r=limb(240,462,p.armN,22,false);if(r)return r;
+  if(ell(x,yb,272,265,203,165,-0.12)<=1){
+    if(ell(x,yb,444,322,32,26)<=1)return{c:yb>310?C.pk:C.ink,l:'head',m:true};
+    if(ell(x,yb,403,250,36,48)<=1)return{c:ell(x,yb,418,246,11,28)<=1?C.w:(p.green?C.g:C.b),l:'head'};
+    if(Math.abs(Math.hypot(x-248,yb-282)-62)<11)return{c:C.s2,l:'head'};
+    return{c:ell(x,yb,300,262,188,170)>1?C.s1:C.w,l:'head'};}
+  if(ell(x,yb,122,44,38,22,-0.35)<=1||cap(x,yb,178,132,137,62,14,11)>=0)return{c:C.w,l:'ant'};
+  const leg=(hx,a,near)=>{const L=78,ex=hx+Math.sin(a)*L,ey=560+Math.cos(a)*L;const t=cap(x,yb,hx,560,ex,ey,36,19);if(t<0)return null;const bl=t>0.68;return near?{c:bl?C.b:C.w,l:'leg'}:{c:bl?C.bd:C.s2,l:'far'};};
+  r=leg(274,p.legN,true);if(r)return r;
+  if(ell(x,yb,268,512,74,92)<=1){let c=C.w;if(x<222)c=C.s1;if(x>=296&&yb>=440&&yb<=500&&(x-296)>=(yb-440)*0.5)c=C.g;if(x>=306&&yb>=508&&yb<=570)c=C.b;return{c,l:'body'};}
+  r=leg(258,p.legF,false);if(r)return r;
+  r=limb(292,462,p.armF,20,true);if(r)return r;
+  return null;};}
+// 正面五官與胸口閃電花紋：依設定圖逐格描繪，避免小尺寸取樣時變形或缺色
+const SM_EYE_B=[".BBB.","BB.BB","BB.BB","BB.BB",".BBB."];
+const SM_EYE_G=[".GGGG.","GG.GGG","GG.GGG","GG.GGG","GGGGGG",".GGGG."];
+const SM_MOUTH=["kkkk","kppk",".kk."];
+const SM_TORSO=["GGGGGGG..","GGGGBBBB.","....BBBBB","..BBBBBBB","BBBBBBBB.","BBBBB...."];
+function stampSmall(spr,dy){const W=spr.w,g=spr.g;const put=(x,y,c)=>{if(x<0||y<0||x>=W||y>=spr.h)return;g[y*W+x]=c;};
+  const st=(pat,ox,oy,map)=>pat.forEach((r,j)=>{for(let i=0;i<r.length;i++){const c=map[r[i]];if(c)put(ox+i,oy+j+dy,c);}});
+  // 先把取樣產生的五官清成白色，再蓋上逐格圖
+  for(let y=7+dy;y<=17+dy;y++)for(let x=3;x<=17;x++){if(y<0||y>=spr.h)continue;const c=g[y*W+x];if(c===C.b||c===C.g||c===C.pk||(c===C.ink&&x>2&&x<17&&y>6+dy&&y<17+dy&&!(x===3||x===16)))g[y*W+x]=(c===C.ink&&isEdge(spr,x,y))?c:C.w;}
+  st(SM_EYE_B,4,9,{B:C.b});st(SM_EYE_G,11,8,{G:C.g});st(SM_MOUTH,8,14,{k:C.ink,p:C.pk});
+  SM_TORSO.forEach((r,j)=>{for(let i=0;i<9;i++){const x=6+i,y=20+j+dy;if(y<0||y>=spr.h)continue;const c=g[y*W+x];if(!c||c===C.ink)continue;const ch=r[i];g[y*W+x]=ch==='G'?C.g:ch==='B'?C.b:(c===C.s1?C.s1:C.w);}});
+  return spr;}
+function isEdge(spr,x,y){const W=spr.w,g=spr.g;const n=[[x-1,y],[x+1,y],[x,y-1],[x,y+1]];return n.some(q=>q[0]<0||q[1]<0||q[0]>=W||q[1]>=spr.h||!g[q[1]*W+q[0]]);}
+const OF={U:22,X0:235-10*22,Y0:2,GW:20,GH:30}, OS={U:22,X0:268-10*22,Y0:2,GW:20,GH:30};
+function omiFrames(){
+  const walk=[{bob:0,lL:0,lR:0,arm:0},{bob:-22,lL:24,lR:0,arm:18},{bob:0,lL:0,lR:0,arm:0},{bob:-22,lL:0,lR:24,arm:-18}];
+  const LEFT=[];for(let f=0;f<8;f++){const s=Math.sin(f/8*Math.PI*2);LEFT.push(raster(sideSampler({green:true,sy:Math.abs(s)<0.5?-11:0,legN:0.6*s,legF:-0.6*s,armN:-0.9*s-0.1,armF:0.9*s}),OS));}
+  const F={left:LEFT,front:walk.map(o=>stampSmall(raster(frontSampler(o),OF),Math.round(o.bob/22))),back:walk.map(o=>raster(frontSampler(Object.assign({back:true},o)),OF)),
+    idle:[stampSmall(raster(frontSampler({bob:0}),OF),0),stampSmall(raster(frontSampler({bob:22}),OF),1)],side:[]};
+  for(let f=0;f<8;f++){const s=Math.sin(f/8*Math.PI*2);F.side.push(raster(sideSampler({sy:Math.abs(s)<0.5?-11:0,legN:0.6*s,legF:-0.6*s,armN:-0.9*s-0.1,armF:0.9*s}),OS));}
+  return F;
+}
+
+
+// ===== 02-icons.js =====
+// ===== 道具像素圖示（12×12，每個字元一個像素） =====
+const IPAL={k:'#1d2b3a',w:'#ffffff',b:'#0a6cc2',l:'#8fcaf2',g:'#35a53a',G:'#23752a',y:'#ffd95a',o:'#f2a93b',r:'#ff6b5a',p:'#b9a2ee',s:'#c7d6e5',d:'#5a6878',P:'#f7a8b8',N:'#3e4e8c',n:'#8b6b4a',O:'#ec6c1c',Y:'#f8b41b',m:'#7b56b0',S:'#1f5fb0'};
+// sakuyo 保健品畫成實際包裝的縮小版，右上角的橘黃方塊是 sakuyo 標誌
+const ICONS={
+ dehum:["..kkkkkkkk..",".kwwwwwwwwk.",".kwkkkkkkwk.",".kwwwwwwwwk.",".kwkkkkkkwk.",".kwwwwwwwsk.",".kwwwwwwgsk.",".kkkkkkkkkk.",".klllllllsk.",".klbllllbsk.",".kllllllssk.","..kkkkkkkk.."],
+ dryer:["............","....kkkkk...","kkkkwwwwwk..","klllwwbwwwk.","kkkkwwwwwwk.","....kwwwwk..",".....kkwk...","......kwk...","......kwk...","......kwk...","......kkk...","............"],
+ fan:["...kkkkkk...","..kllllllk..",".klkkkkkklk.",".klkllllklk.",".klklbblklk.",".klklbblklk.",".klkllllklk.",".klkkkkkklk.","..kllllllk..","...kkkkkk...",".....kk.....","...kkkkkk..."],
+ phone:["..kkkkkkkk..","..kllllllk..","..klwllllk..","..kllllllk..","..kllyyllk..","..kllyyllk..","..kllllllk..","..kllllllk..","..kkkkkkkk..","..kkkwwkkk..","..kkkkkkkk..","............"],
+ earbuds:["............",".kkk....kkk.","kwwwk..kwwwk","kwwbk..kbwwk","kwwwk..kwwwk",".kwk....kwk.",".kwk....kwk.",".kwk....kwk.",".kkk....kkk.","............","............","............"],
+ massager:["...kkkkk....","..kppppwk...",".kpppppppk..",".kpppppppk..",".kppppppsk..","..kppppsk...","...kkkkk....","....kwwk....","....kwsk....","....kwsk....","....kwsk....","....kkkk...."],
+ watch:["....kkkk....","....kssk....","...kkkkkk...","..kkllllkk..","..kllllllk..","..kllbbllk..","..kllllllk..","..kkllllkk..","...kkkkkk...","....kssk....","....kkkk....","............"],
+ powerbank:["............",".kkkkkkkkk..",".kwwwwwwwk..",".kwggggwwkk.",".kwggggwwkk.",".kwwwwwwwk..",".kwwwywwwk..",".kwwyywwwk..",".kwwwwwwwk..",".kkkkkkkkk..","............","............"],
+ airfryer:["............","..kkkkkkkk..",".kwwwwwwwwk.",".kwkkkkkkwk.",".kwwwwwwwwk.",".kssssssssk.",".kskkkkkksk.",".kswwwwwwsk.",".kskkkkkksk.",".kssssssssk.","..kkkkkkkk..","............"],
+ purifier:["..kkkkkkkk..","..kwwwwwsk..","..kwkwkwsk..","..kwwwwwsk..","..kwkwkwsk..","..kwwwwwsk..","..kwwwwwsk..","..kwwgwwsk..","..kwwwwwsk..","..kwwwwwsk..","..kssssssk..","..kkkkkkkk.."],
+ robot:["............","...kkkkkk...","..kddddddk..",".kddwwwwddk.",".kdwwbbwwdk.",".kdwbbbbwdk.",".kdwwbbwwdk.",".kddwwwwddk.","..kddddddk..","...kkkkkk...","............","............"],
+ vacuum:[".........kk.","........kwk.",".......kwk..","......kwk...",".....kpk....","....kppk....","...kppk.....","...kpk......","..kwk.......","kkkkkkk.....","kdddddk.....","kkkkkkk....."],
+ tv:["............","kkkkkkkkkkkk","kllllllllllk","klwllllllllk","kllllllllllk","kllllllllllk","kllllllllllk","kkkkkkkkkkkk",".....kk.....","...kkkkkk...","............","............"],
+ soundbar:["............","..l...l...l.",".l...l...l..","............","kkkkkkkkkkkk","kddwddddwddk","kddddddddddk","kkkkkkkkkkkk","............","............","............","............"],
+ gamepad:["............","............","..kkkkkkkk..",".kwwwwwwwwk.","kwwkwwwwwrwk","kwkkkwwwbwgk","kwwkwwwwwywk","kwwwwkkwwwwk",".kwwk..kwwk.","..kk....kk..","............","............"],
+ tablet:["............",".kkkkkkkkkk.",".kllllllllk.",".klwllllllk.",".kllllllllk.",".kllllllllk.",".kllllllllk.",".kllllllllk.",".kllllllllk.",".kkkkkkkkkk.","............","............"],
+ handheld:["............","............","............",".kkkkkkkkkk.","kwwkllllkwwk","kwkkllllkbwk","kwwkllllkwrk",".kkkkkkkkkk.","............","............","............","............"],
+ probio:["............",".kkkkkkkkkk.",".kGGGGGGOYk.",".kGGGGGGYOk.",".kGgGGgGGGk.",".kGgGgGGGGk.",".kgGgGgGGGk.",".kgGgGgwwwk.",".kgggggwwwk.",".kgggggwwwk.",".kGGGGGGGGk.",".kkkkkkkkkk."],
+ joint:["............",".kkkkkkkkkk.",".kwwwwwwOYk.",".kwwwwwwYOk.",".kOOOOOOOOk.",".kOOOOObOOk.",".kOObbbbbOk.",".kOOOObOOOk.",".kOOObObOOk.",".kOObOOObOk.",".kObOOOOOOk.",".kkkkkkkkkk."],
+ lutein:["............",".kkkkkkkkkk.",".kmmmmmmOYk.",".kwooowwYOk.",".kooyoowwwk.",".kooooowwwk.",".kwooowwwwk.",".kwwwwwwwwk.",".kwmmwwoowk.",".kmmmwoOowk.",".kmmmmmmmmk.",".kkkkkkkkkk."],
+ fishoil:["............",".kkkkkkkkkk.",".kwooowwOYk.",".kooooowYOk.",".kooooowwwk.",".kwooowwwwk.",".kwwwwwwwwk.",".kwbbbbwwbk.",".kbbwbbbbbk.",".kwbbbbwwbk.",".kwwwwwwwwk.",".kkkkkkkkkk."],
+ collagen:["............",".kkkkkkkkkk.",".kPPPPPPOYk.",".kPPPPPPYOk.",".kPPwwwwPPk.",".kPwwrrwwPk.",".kPwwwwwwPk.",".kPPwwwwPPk.",".kPPPPPPPPk.",".kwwwwwwwwk.",".kwwwwwwwwk.",".kkkkkkkkkk."],
+ sesame:["....kkkk....","....kddk....","..kkkkkkkk..",".kwooowwOYk.",".koowoowYOk.",".kooooowwwk.",".kwooowwwwk.",".kwwwwwwwwk.",".kwkdkdkwwk.",".kkdkdkdkwk.",".kwwwwwwwwk.",".kkkkkkkkkk."],
+ evoDry:["..kkkkkkkk..","..kwkwkwsk..","..kwwwwwsk..","..kwkwkwsk..","..kwwwwwsk..","..kwwgwwsk..","..kkkkkkkk..","..klllllsk..","..klblblsk..","..kllllssk..","..kkkkkkkk..","............"],
+ evoTheater:["............","...kkkkkk...","kk.kllllk.kk","kd.kllllk.dk","kd.kllllk.dk","kd.kkkkkk.dk","kd...kk...dk","kk.kkkkkk.kk","............","............","............","............"],
+ evoMop:["............","...kkkkkk...","..kbbbbbbk..",".kbbwwwwbbk.",".kbwwllwwbk.",".kbwllllwbk.",".kbwwllwwbk.",".kbbwwwwbbk.","..kbbbbbbk..","...kkkkkk...","..l..l..l...","............"],
+ evoSmart:["............",".kkkkk......",".klllk..kk..",".klwlk.kkkk.",".klllk.kllk.",".klllk.kbbk.",".klllk.kllk.",".kkkkk.kkkk.",".kkwkk..kk..",".kkkkk......","............","............"],
+ evoCoop:["............","............","..kkkkkkkk..",".kyyyyyyyyk.","kyykyyyyyryk","kykkkyyybygk","kyykyyyyywyk","kyyyykkyyyyk",".kyyk..kyyk.","..kk....kk..","............","............"],
+ heal:["............","...kk..kk...","..krrkkrrk..",".krrrrrrrrk.",".krwrrrrrrk.",".krrrrrrrrk.","..krrrrrrk..","...krrrrk...","....krrk....",".....kk.....","............","............"]
+};
+function drawIcon(ctx,id,x0,y0){const px=ICONS[id]||ICONS.heal;px.forEach((row,j)=>{for(let i=0;i<12;i++){const c=IPAL[row[i]];if(c){ctx.fillStyle=c;ctx.fillRect(x0+i,y0+j,1,1);}}});}
+
+// ===== 03-enemies.js =====
+// ===== 煩惱角色：以形狀＋特徵逐格產生 =====
+const EPAL={k:'#1d2b3a',w:'#ffffff',y:'#ffd95a',o:'#ff9f2e',O:'#ffc247',r:'#ff6b5a',b:'#7cc6f2',l:'#b9dcff',g:'#c3bcd8',G:'#9189ad',p:'#f7a8b8',d:'#7d8aa8',D:'#5a6684',s:'#9aa3ad',n:'#8b6b4a',Y:'#e8c24a'};
+function shapeMask(shape,x,y,w,h){const cx=w/2,px=x+0.5,py=y+0.5;
+  switch(shape){
+    case 'blob':{const ry=h*0.62,cy=h-0.5-ry*0.7;if(py>h-1)return false;return((px-cx)/(w/2-0.3))**2+((py-cy)/ry)**2<=1||(py>cy&&Math.abs(px-cx)<=w/2-0.8&&py<=h-1);}
+    case 'round':return((px-cx)/(w/2-0.3))**2+((py-h/2)/(h/2-0.3))**2<=1;
+    case 'cloud':{const r=h*0.34;const cs=[[w*0.3,h*0.58,r],[w*0.52,h*0.4,r*1.15],[w*0.72,h*0.6,r*0.95],[w*0.5,h*0.66,r]];return cs.some(q=>(px-q[0])**2+(py-q[1])**2<=q[2]*q[2]);}
+    case 'rect':return px>=1&&px<=w-1&&py>=1&&py<=h-0.5&&!((px<2||px>w-2)&&(py<2||py>h-1.5));
+    case 'rock':{const k=((px-cx)/(w/2-0.2))**4+((py-h*0.55)/(h*0.46))**4;return k<=1&&py>1.5;}
+    case 'tri':{const top=1;return py>=top+Math.abs(px-cx)*(h-top)/(w/2)*0.95&&py<=h-0.5;}
+    case 'spiky':{const r=Math.min(w,h)/2-1.6;const d=Math.hypot(px-cx,py-h/2);const a=Math.atan2(py-h/2,px-cx);return d<=r+(Math.cos(a*8)>0.6?1.6:0);}
+  }return false;}
+function genSprite(def,flash,big){
+  const w=def.w,h=def.h;const g=[];for(let y=0;y<h;y++){g.push([]);for(let x=0;x<w;x++)g[y].push(shapeMask(def.shape,x,y,w,h)?'a':'.');}
+  // 陰影與亮點
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(g[y][x]!=='a')continue;if(y>=h*0.72)g[y][x]='b';}
+  const cx=Math.floor(w/2);
+  const set=(x,y,c)=>{if(y>=0&&y<h&&x>=0&&x<w)g[y][x]=c;};
+  if(def.draw)def.draw(set,w,h,cx,g,big);
+  // 臉
+  const ey=def.eyeY!=null?def.eyeY:Math.floor(h*0.5),es=big?2:1,gap=def.eyeGap||(big?3:2);
+  if(def.face!=='none'){for(const sx of [cx-gap-es,cx+gap-1]){for(let i=0;i<es;i++)for(let j=0;j<es;j++){if(def.face==='droopy'){if(j===0)set(sx+i,ey+1,'k');}else if(def.face==='closed'){set(sx+i,ey+1,'k');}else set(sx+i,ey+j,'k');}}
+    if(big){set(cx-1,ey+es+2,'k');set(cx,ey+es+2,'k');}}
+  // 外框
+  const o=g.map(r=>r.slice());for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(g[y][x]!=='.')continue;if([[x-1,y],[x+1,y],[x,y-1],[x,y+1]].some(q=>g[q[1]]&&g[q[1]][q[0]]&&g[q[1]][q[0]]!=='.'&&g[q[1]][q[0]]!=='k'))o[y][x]='k';}
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  for(let y=0;y<h;y++)for(let i=0;i<w;i++){const ch=o[y][i];if(ch==='.')continue;let col=ch==='a'?def.a:ch==='b'?def.b:EPAL[ch];if(flash&&ch!=='k')col='#ffffff';x.fillStyle=col;x.fillRect(i,y,1,1);}
+  return c;}
+// 單體煩惱：tag 決定被哪些商品克制，debuff 是碰到時造成的狀態
+const ENEMY={
+ humid:{name:'濕氣團',shape:'blob',w:10,h:10,a:'#8fd0f5',b:'#5aaee0',hp:9,spd:21,dmg:3,xp:1,draw:(s,w,h,cx)=>{s(cx-3,3,'w');s(cx-3,4,'w');}},
+ towel:{name:'濕毛巾怪',shape:'rect',w:10,h:11,a:'#f7a8b8',b:'#e88aa0',hp:14,spd:18,dmg:4,xp:2,draw:(s,w,h)=>{for(let x=1;x<w-1;x++){s(x,3,'w');s(x,h-3,'w');}s(2,h,'b');s(w-3,h,'b');}},
+ heat:{name:'熱浪小太陽',shape:'spiky',w:12,h:12,a:'#ffc247',b:'#ff9f2e',hp:12,spd:28,dmg:4,xp:2,debuff:'slow'},
+ lost:{name:'迷路問號怪',shape:'blob',w:10,h:11,a:'#c3a6f0',b:'#9f82d6',hp:12,spd:30,dmg:3,xp:2,eyeY:4,draw:(s,w,h,cx)=>{[[0,0],[1,0],[2,1],[1,2],[1,4]].forEach(p=>s(cx-1+p[0],6+p[1]-1,'k'));}},
+ noise:{name:'噪音喇叭怪',shape:'round',w:11,h:11,a:'#ffb36b',b:'#f08a3c',hp:14,spd:24,dmg:4,xp:2,eyeY:4,draw:(s,w,h,cx)=>{s(cx-1,7,'k');s(cx,7,'k');s(cx+1,7,'k');s(cx,8,'k');}},
+ sore:{name:'痠痛小石頭',shape:'rock',w:11,h:10,a:'#b3bac4',b:'#8f98a4',hp:20,spd:16,dmg:4,xp:3,debuff:'slow',draw:(s,w)=>{s(w-4,3,'y');s(w-3,3,'y');s(w-4,4,'y');s(w-3,4,'y');}},
+ forget:{name:'健忘泡泡',shape:'round',w:11,h:11,a:'#d6ecff',b:'#b9dcff',hp:10,spd:26,dmg:3,xp:2,debuff:'cd',draw:(s,w,h,cx)=>{s(cx-3,2,'w');s(cx-2,2,'w');s(cx-3,3,'w');}},
+ battery:{name:'低電量怪',shape:'rect',w:9,h:12,a:'#e6ebef',b:'#cfd6de',hp:14,spd:22,dmg:3,xp:2,eyeY:4,draw:(s,w,h,cx)=>{s(cx-1,0,'d');s(cx,0,'d');for(let x=2;x<w-2;x++){s(x,h-3,'r');s(x,h-2,'r');}}},
+ eyes:{name:'眼睛疲勞怪',shape:'blob',w:11,h:10,a:'#a9b8cc',b:'#8a9ab0',hp:12,spd:22,dmg:3,xp:2,face:'droopy',debuff:'blur'},
+ hungry:{name:'肚子餓鬧鐘',shape:'round',w:11,h:11,a:'#ffe38a',b:'#f2c94c',hp:16,spd:26,dmg:4,xp:2,eyeY:3,draw:(s,w,h,cx)=>{s(cx,5,'k');s(cx,6,'k');s(cx+1,6,'k');s(cx+2,6,'k');s(1,0,'r');s(2,0,'r');s(w-2,0,'r');s(w-3,0,'r');}},
+ smoke:{name:'油煙霧',shape:'cloud',w:13,h:10,a:'#c2b8a8',b:'#a39883',hp:18,spd:17,dmg:4,xp:3},
+ furball:{name:'灰塵毛球',shape:'spiky',w:11,h:11,a:'#cfc9bf',b:'#aaa396',hp:16,spd:24,dmg:3,xp:2},
+ pollen:{name:'花粉球',shape:'spiky',w:10,h:10,a:'#f5e27a',b:'#e0c44a',hp:12,spd:30,dmg:3,xp:2,draw:(s,w,h,cx)=>{s(cx-2,2,'o');s(cx+2,7,'o');}},
+ dust:{name:'灰塵雲',shape:'cloud',w:13,h:10,a:'#c3bcd8',b:'#9189ad',hp:22,spd:17,dmg:4,xp:3},
+ bored:{name:'無聊怪',shape:'blob',w:11,h:11,a:'#c9ccd3',b:'#a9adb8',hp:14,spd:20,dmg:3,xp:2,face:'droopy',draw:(s,w,h,cx)=>{s(cx-2,8,'k');s(cx,8,'k');s(cx+2,8,'k');}},
+ awkward:{name:'冷場烏雲',shape:'cloud',w:13,h:10,a:'#9fb2cf',b:'#7f93b3',hp:18,spd:19,dmg:4,xp:3,draw:(s,w)=>{s(w-2,2,'b');s(w-2,3,'b');}},
+ stress:{name:'壓力小山',shape:'tri',w:12,h:11,a:'#c9956a',b:'#a8764f',hp:24,spd:16,dmg:5,xp:3,eyeY:6,draw:(s,w,h,cx)=>{s(cx,1,'w');s(cx-1,2,'w');s(cx,2,'w');s(cx+1,2,'w');}},
+ static:{name:'雜訊怪',shape:'rect',w:11,h:10,a:'#dde2e8',b:'#c4cbd4',hp:14,spd:26,dmg:3,xp:2,eyeY:4,draw:(s,w,h)=>{for(let i=0;i<9;i++)s(1+((i*5)%(w-2)),1+((i*3)%(h-2)),'d');}},
+ sheep:{name:'失眠小羊',shape:'cloud',w:12,h:10,a:'#ffffff',b:'#e6eaee',hp:16,spd:22,dmg:4,xp:2,face:'none',draw:(s,w,h,cx)=>{for(let x=cx-2;x<=cx+1;x++)for(let y=4;y<=6;y++)s(x,y,'D');s(cx-1,5,'w');s(cx,5,'w');}},
+ sultry:{name:'悶熱氣團',shape:'cloud',w:13,h:10,a:'#ffc2a0',b:'#f59d74',hp:18,spd:20,dmg:4,xp:3,debuff:'slow'}
+};
+// 頭目 hp：週一到週六是基礎難度下的元氣，實際會隨通關天數調整（spawnBoss）；週日固定
+const BOSSDEF={
+ mon:{name:'梅雨烏雲王',shape:'cloud',w:30,h:22,a:'#6f86b8',b:'#566b99',hp:1250,spd:16,weak:['dehum','dryer','evoDry'],abil:['summon','rain'],minion:'humid',draw:(s,w,h)=>{for(let i=0;i<5;i++){s(6+i*4,h-1,'b');}}},
+ tue:{name:'烈日塞車王',shape:'spiky',w:28,h:28,a:'#ffc247',b:'#ff9f2e',hp:1250,spd:18,weak:['fan'],abil:['dash','summon'],minion:'heat'},
+ wed:{name:'加班疲勞山',shape:'tri',w:30,h:24,a:'#b3bac4',b:'#8f98a4',hp:1250,spd:14,weak:['massager','watch','powerbank','evoSmart'],abil:['rain','summon'],minion:'sore',eyeY:13,draw:(s,w,h,cx)=>{for(let y=17;y<22;y++){s(cx,y,'r');if(y>18){s(cx-1,y,'r');s(cx+1,y,'r');}}}},
+ thu:{name:'餓扁大鬧鐘',shape:'round',w:26,h:26,a:'#ffe38a',b:'#f2c94c',hp:1250,spd:18,weak:['airfryer'],abil:['dash','summon'],minion:'hungry',eyeY:8,draw:(s,w,h,cx)=>{for(let y=11;y<17;y++)s(cx,y,'k');for(let x=cx;x<cx+6;x++)s(x,16,'k');for(let x=2;x<7;x++){s(x,0,'r');s(w-1-x,0,'r');s(x,1,'r');s(w-1-x,1,'r');}}},
+ fri:{name:'超級灰塵毛球',shape:'spiky',w:28,h:28,a:'#cfc9bf',b:'#aaa396',hp:1250,spd:15,weak:['robot','vacuum','purifier','evoMop','evoDry'],abil:['summon','rain'],minion:'furball'},
+ sat:{name:'無聊大魔王',shape:'rect',w:30,h:24,a:'#c9ccd3',b:'#a9adb8',hp:1250,spd:16,weak:['tv','soundbar','gamepad','tablet','evoTheater','evoCoop'],abil:['dash','rain','summon'],minion:'bored',face:'droopy',draw:(s,w,h,cx)=>{for(let x=cx-5;x<=cx+5;x+=5){s(x,17,'k');s(x+1,17,'k');}}},
+ sun:{name:'週一憂鬱大魔王',shape:'cloud',w:34,h:26,a:'#4b5a8c',b:'#3a4775',hp:2000,spd:17,weak:[],abil:['summon','rain','dash'],minion:'mix',draw:(s,w,h,cx)=>{for(let y=4;y<7;y++)for(let x=cx-3;x<=cx+3;x++)s(x,y,'y');}}
+};
+
+// ===== 04-data.js =====
+// ===== 商品道具：商品好處＝攻擊方式，weak＝可以解決的煩惱 =====
+const ITEMS={
+ dehum:{name:'除濕機',kind:'w',prod:'除濕機',benefit:'把空氣中的濕氣收進水箱',weak:['humid','towel'],desc:['乾燥光圈持續蒸發身邊的濕氣','大容量水箱：光圈變大','強力除濕：傷害提升','光圈再擴大','滿級：連續除濕，傷害大幅提升']},
+ dryer:{name:'吹風機',kind:'w',prod:'吹風機',benefit:'快速吹乾',weak:['towel','humid'],desc:['朝前方噴出暖風，吹乾並推開','風量加大：範圍變長','溫控升級：傷害提升','冷熱交替：噴得更快','滿級：大風量，擊退大幅提升']},
+ fan:{name:'循環扇',kind:'w',prod:'循環扇／風扇',benefit:'讓空氣流動、降溫',weak:['heat','sultry'],desc:['2 道旋風繞著神歐迷轉，吹散熱氣','增加到 3 道旋風','DC 馬達：傷害與擊退提升','增加到 4 道旋風','滿級：5 道旋風，轉速更快']},
+ phone:{name:'手機',kind:'w',prod:'手機',benefit:'拍照、導航、隨時聯繫',weak:['lost'],desc:['拍照閃光照亮前方，迷路問號怪會暈眩','閃光範圍變大','相機升級：傷害提升','連拍模式：閃得更快','滿級：夜景模式，範圍與暈眩時間大增']},
+ earbuds:{name:'藍牙耳機',kind:'w',prod:'藍牙耳機',benefit:'主動降噪',weak:['noise'],desc:['降噪力場讓周圍煩惱變慢並持續減弱','降噪範圍變大','降噪深度提升：傷害提升','範圍再擴大','滿級：全面降噪，範圍內煩惱大幅減速']},
+ massager:{name:'按摩用品',kind:'w',prod:'按摩器／熱敷墊',benefit:'舒緩放鬆',weak:['sore','stress'],desc:['走過的地方留下熱敷墊，踩上去的煩惱被舒緩、放慢腳步','熱敷墊變大','溫熱升級：舒緩力提升','放得更快，熱度維持更久','滿級：大尺寸熱敷墊，舒緩力大幅提升']},
+ watch:{name:'智慧手錶',kind:'w',prod:'智慧手錶',benefit:'提醒通知、健康紀錄',weak:['forget'],desc:['定時發出提醒脈衝，並在畫面邊緣標示煩惱方向','脈衝範圍變大','提醒升級：傷害提升','頻率提高：脈衝更頻繁','滿級：全天候提醒，範圍大增']},
+ powerbank:{name:'行動電源',kind:'w',prod:'行動電源',benefit:'隨時補充電力',weak:['battery'],desc:['充電光束連到煩惱，每次命中讓其他好物充電加速','光束多連 1 個目標','快充：傷害提升','光束再多連 1 個','滿級：大容量，連 4 個目標']},
+ airfryer:{name:'氣炸鍋',kind:'w',prod:'氣炸鍋／調理鍋',benefit:'快速做出美味料理',weak:['hungry'],desc:['往煩惱堆拋出料理，落地擴散香氣','一次拋出 2 份','火力升級：傷害提升','香氣範圍變大','滿級：一次 3 份，出餐更快']},
+ purifier:{name:'空氣清淨機',kind:'w',prod:'空氣清淨機',benefit:'濾掉灰塵、油煙、花粉',weak:['smoke','dust','pollen'],desc:['產生吸力漩渦，把煩惱吸進去淨化','漩渦變大','濾網升級：傷害提升','冷卻縮短','滿級：漩渦更大、吸力更強']},
+ robot:{name:'掃地機器人',kind:'w',prod:'掃地機器人',benefit:'自動打掃',weak:['furball','dust'],desc:['機器人自動巡邏撞走煩惱，還會撿經驗寶石','巡邏速度提升','吸力升級：傷害提升','增加第 2 台','滿級：3 台同時打掃']},
+ vacuum:{name:'吸塵器',kind:'w',prod:'吸塵器',benefit:'強力吸除',weak:['pollen','furball'],desc:['朝前方持續吸入，吸走花粉與經驗寶石','吸口變長','馬達升級：傷害提升','吸口變寬','滿級：超強氣旋吸力']},
+ tv:{name:'電視',kind:'w',prod:'電視',benefit:'好看的節目',weak:['bored'],desc:['精彩節目時間：範圍內煩惱停下來看電視','節目範圍變大','節目變精彩：停得更久','播出更頻繁','滿級：大尺寸螢幕，範圍與時間大增']},
+ soundbar:{name:'聲霸',kind:'w',prod:'聲霸／喇叭',benefit:'環繞音效',weak:['awkward'],desc:['發出音波圈，把周圍煩惱往外推','音量加大：範圍變大','低音強化：傷害提升','播放更頻繁','滿級：環繞音場，推力大增']},
+ gamepad:{name:'遊戲手把',kind:'w',prod:'遊戲主機',benefit:'紓壓好玩',weak:['stress'],desc:['手把小幫手自動衝撞煩惱，連續命中累積 Combo','衝撞更快','Combo 上限提升','傷害提升','滿級：超高速連打']},
+ tablet:{name:'平板',kind:'w',prod:'平板',benefit:'大螢幕追劇、學習',weak:['static'],desc:['大畫面光束橫向掃過一整排','光束變粗','畫質升級：傷害提升','掃得更頻繁','滿級：超廣角，上下各一道']},
+ probio:{brand:'sakuyo',name:'調整體質',kind:'p',prod:'sakuyo 青汁／益生菌',benefit:'調整體質',desc:['元氣每秒回復 0.5','每秒回復 1','每秒回復 1.5，元氣上限 +10','每秒回復 2','滿級：每秒回復 2.5，元氣上限 +20']},
+ joint:{brand:'sakuyo',name:'關鍵靈活',kind:'p',prod:'sakuyo 關鍵膠原蛋白',benefit:'行動靈活',counter:'slow',desc:['不再被「腳步沉重」影響，移速 +8%','移速 +14%','移速 +20%','移速 +26%','滿級：移速 +32%']},
+ lutein:{brand:'sakuyo',name:'晶亮有神',kind:'p',prod:'sakuyo 金盞花萃取（含葉黃素）',benefit:'晶亮有神',counter:'blur',desc:['不再被「視線模糊」影響，瞄準範圍 +10%','瞄準範圍 +18%','瞄準範圍 +26%','瞄準範圍 +34%','滿級：瞄準範圍 +42%']},
+ fishoil:{brand:'sakuyo',name:'靈活思緒',kind:'p',prod:'sakuyo 魚油',benefit:'靈活思緒',counter:'cd',desc:['不再被「思緒卡卡」影響，冷卻 -6%','冷卻 -10%','冷卻 -14%','冷卻 -18%','滿級：冷卻 -22%']},
+ collagen:{brand:'sakuyo',name:'美妍氣色',kind:'p',prod:'sakuyo 膠原蛋白',benefit:'美妍氣色',desc:['經驗吸取範圍 +10','吸取範圍 +16','吸取範圍 +22','吸取範圍 +28','滿級：吸取範圍 +36']},
+ handheld:{name:'電競掌機',kind:'p',prod:'電競掌機',benefit:'隨時隨地玩',desc:['手速變快：所有好物冷卻 -5%','冷卻 -8%','冷卻 -11%','冷卻 -13%','滿級：冷卻 -15%']},
+ sesame:{brand:'sakuyo',name:'幫助入睡',kind:'p',prod:'sakuyo 芝麻元氣',benefit:'幫助入睡',desc:['元氣歸零時睡一覺，復活並回復 40% 元氣（一次）','復活回復 55%','復活回復 70%','復活回復 85%','滿級：復活回復 100%']}
+};
+const EVOS={
+ evoDry:{name:'清淨除濕機',need:['dehum','purifier'],desc:'除濕機與空氣清淨機合體！超大光圈同時除濕與淨化，範圍內煩惱變慢，還會吸經驗寶石。'},
+ evoTheater:{name:'家庭劇院',need:['tv','soundbar'],desc:'電視加聲霸！定時全畫面播出精彩節目，所有煩惱停住並被音場推開。'},
+ evoMop:{name:'掃拖機器人',need:['robot','vacuum'],desc:'掃地機器人與吸塵器合體！3 台掃拖機器人高速巡邏，全場經驗寶石自動回收。'},
+ evoSmart:{name:'智慧生活組',need:['phone','watch'],desc:'手機加智慧手錶！360 度閃光自動觸發，提醒脈衝範圍加倍。'},
+ evoCoop:{name:'雙人連線',need:['gamepad','handheld'],desc:'遊戲手把加電競掌機！召喚 2 個小幫手一起連打。'}
+};
+const STAGES=[
+ {id:'mon',start:{dehum:1},day:'週一',name:'梅雨早晨',floor:0,enemies:['humid','towel'],items:['dehum','dryer','probio'],intro:'梅雨季到了，家裡濕答答！'},
+ {id:'tue',start:{fan:1},day:'週二',name:'通勤路上',floor:1,enemies:['heat','lost','noise'],items:['fan','phone','earbuds','joint'],intro:'又熱又吵，還差點迷路！'},
+ {id:'wed',start:{massager:1},day:'週三',name:'辦公室',floor:2,enemies:['sore','forget','battery','eyes'],items:['massager','watch','powerbank','lutein','fishoil'],intro:'久坐痠痛、事情好多、手機快沒電！'},
+ {id:'thu',start:{airfryer:1},day:'週四',name:'晚餐時間',floor:5,enemies:['hungry','smoke'],items:['airfryer','purifier','collagen'],intro:'肚子好餓，廚房油煙好多！'},
+ {id:'fri',start:{vacuum:1},day:'週五',name:'週末大掃除',floor:7,enemies:['furball','pollen','dust'],items:['vacuum','robot','purifier'],intro:'灰塵、毛球、花粉一次清乾淨！'},
+ {id:'sat',start:{gamepad:1},day:'週六',name:'客廳娛樂',floor:6,enemies:['bored','awkward','stress','static'],items:['tv','soundbar','gamepad','tablet','handheld'],intro:'好無聊、好有壓力，來放鬆一下！'},
+ {id:'sun',start:{dehum:2,fan:2},day:'週日',name:'晚安之夜',floor:4,enemies:['sheep','sultry'],items:['sesame'],intro:'明天又是週一……先好好睡一覺！'}
+];
+const DEBUFF={slow:{name:'腳步沉重',col:'#ff9f2e'},blur:{name:'視線模糊',col:'#8a9ab0'},cd:{name:'思緒卡卡',col:'#b9a2ee'}};
+
+// ===== 05-engine-core.js =====
+// ===== 畫面與素材 =====
+const cv=document.getElementById('game'),sc=cv.getContext('2d');
+const buf=document.createElement('canvas'),b=buf.getContext('2d');
+let W=240,H=180,K=2,DPR=1;
+function resize(){DPR=window.devicePixelRatio||1;const dw=Math.round(window.innerWidth*DPR),dh=Math.round(window.innerHeight*DPR);K=Math.max(1,Math.round(Math.min(dw,dh)/200));W=Math.ceil(dw/K);H=Math.ceil(dh/K);buf.width=W;buf.height=H;cv.width=W*K;cv.height=H*K;cv.style.width=(W*K/DPR)+'px';cv.style.height=(H*K/DPR)+'px';}
+window.addEventListener('resize',resize);resize();
+function omiCanvas(spr,flip){const c=document.createElement('canvas');c.width=spr.w;c.height=spr.h;const x=c.getContext('2d');for(let j=0;j<spr.h;j++)for(let i=0;i<spr.w;i++){const col=spr.g[j*spr.w+i];if(!col)continue;x.fillStyle=col;x.fillRect(flip?spr.w-1-i:i,j,1,1);}return c;}
+const OMI=omiFrames();
+const SPR={front:OMI.front.map(s=>omiCanvas(s)),back:OMI.back.map(s=>omiCanvas(s)),idle:OMI.idle.map(s=>omiCanvas(s)),right:OMI.side.map(s=>omiCanvas(s)),left:OMI.left.map(s=>omiCanvas(s,true))};
+const SUNMAP=[".....oo.....","..o..oo..o..","...kkkkkk...","..kyyyyyyk..","o.kyyyyyyk.o","o.kykyykyk.o","..kyyyyyyk..","..kyyOOyyk..","...kkkkkk...","..o..oo..o..",".....oo.....","............"];
+function mapCanvas(rows,flash){const h=rows.length,w=rows[0].length;const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');rows.forEach((r,j)=>{for(let i=0;i<w;i++){const ch=r[i];if(ch==='.'||!EPAL[ch])continue;x.fillStyle=flash&&ch!=='k'?'#ffffff':EPAL[ch];x.fillRect(i,j,1,1);}});return c;}
+const ESPR={},EFL={};for(const k in ENEMY){if(k==='heat'){ESPR[k]=mapCanvas(SUNMAP);EFL[k]=mapCanvas(SUNMAP,true);}else{ESPR[k]=genSprite(ENEMY[k]);EFL[k]=genSprite(ENEMY[k],true);}}
+const BSPR={},BFL={};for(const k in BOSSDEF){BSPR[k]=genSprite(BOSSDEF[k],false,true);BFL[k]=genSprite(BOSSDEF[k],true,true);}
+// sakuyo 補給：隨身包（回元氣）與字母盒（S A K U Y O 各藏在週一到週六）
+function pixCanvas(rows){const c=document.createElement('canvas');c.width=rows[0].length;c.height=rows.length;const x=c.getContext('2d');rows.forEach((r,j)=>{for(let i=0;i<r.length;i++){const col=IPAL[r[i]];if(col){x.fillStyle=col;x.fillRect(i,j,1,1);}}});return c;}
+const PACK=pixCanvas(["kkkkkk","kGGOYk","kGGYOk","kwwwwk","kgGGgk","kgggGk","kgGggk","kGGGGk","kkkkkk"]);
+const LETTERS={mon:'S',tue:'A',wed:'K',thu:'U',fri:'Y',sat:'O'};
+const GLYPH={S:['111','100','111','001','111'],A:['010','101','111','101','101'],K:['101','101','110','101','101'],U:['101','101','101','101','111'],Y:['101','101','010','010','010'],O:['111','101','101','101','111']};
+const LBOX={};for(const k in GLYPH){const rows=['kkkkkkkkk','kSSSSSOYk','kSSSSSYOk'];for(let j=0;j<5;j++)rows.push('kSS'+GLYPH[k][j].replace(/1/g,'w').replace(/0/g,'S')+'SSk');rows.push('kSSSSSSSk','kkkkkkkkk');LBOX[k]=pixCanvas(rows);}
+const MARK=pixCanvas(['..OY..','..YO..','OYwwOY','YOwwYO','..OY..','..YO..']);
+const CROWN=mapCanvas(["k.k.k.k","kykykyk","kyyyyyk","kkkkkkk"]);
+const BOX=mapCanvas(["..kk..kk..",".kyykkyyk.","kkkkkkkkkk","krrryyrrrk","krrryyrrrk","kRRRyyRRRk".replace(/R/g,'r'),"krrryyrrrk","krrryyrrrk","kkkkkkkkkk"]);
+const BLADE=mapCanvas(["...kk..","..kllk.",".kllk..","klwk...",".kllk..","..kllk.","...kk.."]);
+const PAD=mapCanvas([".kkkkkk.","kwwwwwwk","kwkwwrwk","kkkkwbwk","kwkwwwwk",".kk..kk."]);
+const PADY=mapCanvas([".kkkkkk.","kyyyyyyk","kykyyryk","kkkkybyk","kykyyyyk",".kk..kk."]);
+const FOOD=mapCanvas(["..kkkk..",".kOOOOk.","kOoOOoOk","kOOOOOOk",".kkkkkk."]);
+const ROBO=mapCanvas([".kkkkk.","kdddddk","kdwbwdk","kdbbbdk","kdwbwdk","kdddddk",".kkkkk."].map(r=>r.replace(/d/g,'D')));
+const ROBOE=mapCanvas([".kkkkk.","kbbbbbk","kbwlwbk","kbllrbk".replace('r','l'),"kbwlwbk","kbbbbbk",".kkkkk."]);
+// 地板
+function hash2(x,y){let h=(x*374761393+y*668265263)>>>0;h=(h^(h>>>13))*1274126177>>>0;return (h^(h>>>16))>>>0;}
+function tileSet(ph){const T=16,list=[];for(let v=0;v<4;v++){const c=document.createElement('canvas');c.width=T;c.height=T;const x=c.getContext('2d');const R=(a,bb,w,h,col)=>{x.fillStyle=col;x.fillRect(a,bb,w,h);};
+  if(ph===0){R(0,0,T,T,'#dcaa78');R(0,0,T,1,'#c28d5c');R(0,8,T,1,'#c28d5c');R((v*5)%16,1,1,7,'#c28d5c');R((v*5+8)%16,9,1,7,'#c28d5c');if(v<2){R(2,3,3,1,'#e6b98a');R(9,12,4,1,'#e6b98a');}}
+  else if(ph===1){R(0,0,T,T,'#d6dce2');R(0,0,T,1,'#bcc5ce');R(0,0,1,T,'#bcc5ce');if(v===2){R(5,6,1,3,'#b3bcc6');R(6,8,2,1,'#b3bcc6');}if(v===3)R(10,4,2,2,'#e8ecef');}
+  else if(ph===2){R(0,0,T,T,'#9fb3c4');for(let i=0;i<16;i+=4)for(let j=(i/4)%2*2;j<16;j+=4)R(i+1,j+1,1,1,'#b4c5d4');}
+  else if(ph===4){R(0,0,T,T,'#5e4d70');R(0,0,T,1,'#4f3f60');R(0,8,T,1,'#4f3f60');R((v*6)%16,1,1,7,'#4f3f60');R((v*6+9)%16,9,1,7,'#4f3f60');if(v===2){R(7,4,1,1,'#fff3b0');}}
+  else if(ph===5){R(0,0,T,T,'#eef1f4');R(0,0,8,8,'#dfe5ea');R(8,8,8,8,'#dfe5ea');R(0,0,T,1,'#cfd6de');R(0,0,1,T,'#cfd6de');if(v===2)R(11,3,2,1,'#f7d9b0');}
+  else if(ph===6){R(0,0,T,T,'#e9d8bd');for(let i=0;i<T;i+=4){R(i,0,1,T,'#e1ccad');}if(v===2){R(4,4,8,8,'#d9b98f');R(5,5,6,6,'#e9d8bd');}if(v===3){R(7,7,2,2,'#c98f6b');}}
+  else {R(0,0,T,T,'#e8d7a8');R(0,0,T,1,'#d4c08c');R(0,8,T,1,'#d4c08c');R(8,1,1,7,'#d4c08c');R(3,9,1,7,'#d4c08c');if(v===2)R(5,3,3,1,'#f2e4bd');}
+  list.push(c);}return list;}
+const TILES={};[0,1,2,4,5,6,7].forEach(p=>TILES[p]=tileSet(p));
+
+// ===== 存檔 =====
+const SKEY='omi-week-v1';let save={cleared:{},items:{},enemies:{},best:{},letters:{}};
+try{const s=localStorage.getItem(SKEY);if(s)save=Object.assign(save,JSON.parse(s));}catch(e){}
+function allLetters(){return Object.keys(LETTERS).every(k=>save.letters[k]);}
+function persist(){try{localStorage.setItem(SKEY,JSON.stringify(save));}catch(e){}}
+function clearedCount(){return STAGES.filter(s=>s.id!=='sun'&&save.cleared[s.id]).length;}
+
+// ===== 狀態 =====
+const STAGE_T=150;let G=null,state='select';
+const rnd=(a,c)=>a+Math.random()*(c-a);
+// 難度：週一到週六同一個基礎係數，每通關其他一天再加一點；週日固定最難
+const DIFF_BASE=1.5,DIFF_STEP=0.2;
+function otherCleared(st){return STAGES.filter(s=>s.id!=='sun'&&s.id!==st.id&&save.cleared[s.id]);}
+function stageDiff(st){return st.id==='sun'?4.3:DIFF_BASE+DIFF_STEP*otherCleared(st).length;}
+// 出發商品：本關的初始好物，加上已通關其他天的初始好物
+function starterOptions(st){if(st.id==='sun')return[];return[Object.keys(st.start)[0],...otherCleared(st).map(s=>Object.keys(s.start)[0])];}
+function newRun(si,starter){const st=STAGES[si];G={si,st,t:0,x:0,y:0,hp:100,maxHp:100,lvl:1,xp:0,need:5,kills:0,weakHits:0,en:[],gems:[],parts:[],fx:[],zones:[],pads:[],sups:[],supN:0,letterWin:Math.floor(Math.random()*4),gotLetter:false,buddy:allLetters(),buddyT:12,lobs:[],rings:[],vort:[],drones:[],helpers:[],boxes:[],items:{},cd:{},deb:{},face:[1,0],dir:'idle',walk:0,hurt:0,inv:1.5,spawnAcc:0,boss:null,bossDone:false,elites:[50,100],pending:0,revived:false,dmgWin:0,dmgWinT:0,combo:0,comboT:0,orbit:0,won:false,lvupCount:0,firstItems:{},stunAll:0};
+  G.diff=stageDiff(st);G.starter=starter&&starterOptions(st).includes(starter)?starter:null;
+  Object.assign(G.items,G.starter?{[G.starter]:1}:st.start);
+  Object.keys(G.items).forEach(id=>save.items[id]=true);persist();}
+function effSi(){return G.diff;}
+function L(id){return G.items[id]||0;}
+function has(id){return !!G.items[id];}
+function wCount(){return Object.keys(G.items).filter(id=>(ITEMS[id]&&ITEMS[id].kind==='w')||EVOS[id]).length;}
+function pCount(){return Object.keys(G.items).filter(id=>ITEMS[id]&&ITEMS[id].kind==='p').length;}
+function cdMul(){let m=1;m*=1-[0,0.06,0.1,0.14,0.18,0.22][L('fishoil')];m*=1-[0,0.05,0.08,0.11,0.13,0.15][L('handheld')];if(G.deb.cd>0)m*=1.4;return m;}
+function rangeMul(){let m=1+[0,0.1,0.18,0.26,0.34,0.42][L('lutein')];if(G.deb.blur>0)m*=0.7;return m;}
+function available(){if(G.st.id==='sun')return Object.keys(ITEMS);const set=new Set(G.st.items);STAGES.forEach(s=>{if(save.cleared[s.id])s.items.forEach(i=>set.add(i));});return [...set];}
+
+// ===== 輸入 =====
+const keys=new Set();let joy=null;
+window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+cv.addEventListener('pointerdown',e=>{if(state!=='play')return;e.preventDefault();joy={id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY};try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+cv.addEventListener('pointermove',e=>{if(joy&&e.pointerId===joy.id){joy.x=e.clientX;joy.y=e.clientY;}});
+const endJoy=e=>{if(joy&&e.pointerId===joy.id)joy=null;};cv.addEventListener('pointerup',endJoy);cv.addEventListener('pointercancel',endJoy);
+function inputDir(){let dx=0,dy=0;if(keys.has('a')||keys.has('arrowleft'))dx--;if(keys.has('d')||keys.has('arrowright'))dx++;if(keys.has('w')||keys.has('arrowup'))dy--;if(keys.has('s')||keys.has('arrowdown'))dy++;
+  if(joy){const jx=joy.x-joy.ox,jy=joy.y-joy.oy,d=Math.hypot(jx,jy);if(d>6){const m=Math.min(1,d/36);dx=jx/d*m;dy=jy/d*m;}}
+  const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d;}return[dx,dy];}
+
+// ===== 敵人 =====
+function stageTypes(){if(G.st.id==='sun'){const all=Object.keys(ENEMY);return Math.random()<0.45?G.st.enemies:all;}return G.st.enemies;}
+function spawnEnemy(type,x,y,elite){const T=ENEMY[type];const hpMul=(1+effSi()*0.28)*(1+G.t/170);save.enemies[type]=true;
+  G.en.push({type,x,y,hp:T.hp*hpMul*(elite?9:1),max:T.hp*hpMul*(elite?9:1),spd:T.spd*(1+effSi()*0.03)*(elite?0.8:1),dmg:T.dmg+(elite?3:0),r:elite?11:5,elite:!!elite,flash:0,kx:0,ky:0,hitCd:0,fanCd:0,robCd:0,padCd:0,stun:0,slowT:0,wob:Math.random()*6});}
+function ringPos(){const a=Math.random()*Math.PI*2,R=Math.hypot(W,H)/2+12;return[G.x+Math.cos(a)*R,G.y+Math.sin(a)*R];}
+function spawnBoss(){const d=BOSSDEF[G.st.id];const a=Math.random()*Math.PI*2,R=Math.min(W,H)/2+18;const p=[G.x+Math.cos(a)*R,G.y+Math.sin(a)*R];const hp=G.st.id==='sun'?d.hp:Math.round(d.hp*(1+G.diff*0.28)/(1+DIFF_BASE*0.28));G.boss={id:G.st.id,x:p[0],y:p[1],hp,max:hp,spd:d.spd*1.35,r:14,flash:0,stun:0,t:0,abi:0,state:'walk',st:0,dir:[0,0],name:d.name};banner(d.name+' 出現了！','打倒它就能過關');}
+function killEnemy(e){e.dead=true;G.kills++;const col=ENEMY[e.type].a;for(let i=0;i<6;i++){const a=Math.random()*6.28,v=rnd(20,60);G.parts.push({x:e.x,y:e.y-4,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:rnd(0.3,0.6),c:i%2?'#ffffff':col});}
+  if(e.elite){G.boxes.push({x:e.x,y:e.y});for(let i=0;i<6;i++)G.gems.push({x:e.x+rnd(-8,8),y:e.y+rnd(-8,8),v:3,age:0});}
+  else G.gems.push({x:e.x,y:e.y,v:ENEMY[e.type].xp,age:0});}
+function hit(e,d,src,kx,ky,kb){if(!e||e.dead)return;const isBoss=e===G.boss;let m=1;
+  if(isBoss){if(BOSSDEF[e.id].weak.includes(src)){m=2;G.weakHits++;}}
+  else{const it=ITEMS[src];if((it&&it.weak&&it.weak.includes(e.type))||(EVOS[src]&&evoWeak(src,e.type))){m=2.5;G.weakHits++;}}
+  e.hp-=d*m;e.flash=0.08;if(kb&&!isBoss){e.kx+=kx*kb;e.ky+=ky*kb;}
+  if(m>1&&Math.random()<0.3)G.parts.push({x:e.x,y:e.y-8,vx:0,vy:-20,t:0.5,c:'#ffd95a',star:true});
+  if(e.hp<=0){if(isBoss)bossDown();else killEnemy(e);}}
+function evoWeak(src,type){return EVOS[src].need.some(n=>ITEMS[n]&&ITEMS[n].weak&&ITEMS[n].weak.includes(type));}
+function eachIn(x,y,r,fn){for(const e of G.en){if(e.dead)continue;const dx=e.x-x,dy=e.y-6-y;if(dx*dx+dy*dy<=(r+e.r)*(r+e.r))fn(e,dx,dy);}if(G.boss){const e=G.boss,dx=e.x-x,dy=e.y-12-y;if(dx*dx+dy*dy<=(r+e.r)*(r+e.r))fn(e,dx,dy);}}
+function nearest(n,maxD,fx,fy){fx=fx==null?G.x:fx;fy=fy==null?G.y-9:fy;const arr=[];for(const e of G.en){if(e.dead)continue;const d=(e.x-fx)**2+(e.y-6-fy)**2;if(maxD&&d>maxD*maxD)continue;arr.push([d,e]);}if(G.boss){const d=(G.boss.x-fx)**2+(G.boss.y-12-fy)**2;if(!maxD||d<=maxD*maxD)arr.push([d,G.boss]);}arr.sort((a,c)=>a[0]-c[0]);return arr.slice(0,n).map(a=>a[1]);}
+function inCone(e,x,y,dir,len,half){const ey=e===G.boss?e.y-12:e.y-6;const dx=e.x-x,dy=ey-y,d=Math.hypot(dx,dy);if(d>len+e.r)return false;const a=Math.atan2(dy,dx)-Math.atan2(dir[1],dir[0]);const ad=Math.abs(Math.atan2(Math.sin(a),Math.cos(a)));return ad<=half||d<e.r+3;}
+function every(key,period,fn){if(G.cd[key]==null)G.cd[key]=period*0.5;G.cd[key]-=G.dt;if(G.cd[key]<=0){G.cd[key]=period*cdMul();fn();}}
+
+// ===== 武器 =====
+function updWeapons(dt){
+  const rm=rangeMul(),px=G.x,py=G.y-9;
+  // 除濕機／清淨除濕機
+  G.auraR=0;if(has('dehum')||has('evoDry')){const evo=has('evoDry'),l=L('dehum');const r=evo?50:[0,22,26,30,33,37][l];G.auraR=r;every('aura',0.5,()=>{const d=evo?13:[0,4,5,7,8,10][l];eachIn(px,py,r,e=>hit(e,d,evo?'evoDry':'dehum',0,0,0));});}
+  // 吹風機
+  if(has('dryer')){const l=L('dryer');every('dryer',[0,1.4,1.3,1.2,1.0,0.9][l],()=>{const len=[0,40,46,48,50,60][l]*rm,dir=G.face.slice();eachIn(px,py,len+10,e=>{if(inCone(e,px,py,dir,len,0.5))hit(e,[0,8,10,13,14,16][l],'dryer',dir[0],dir[1],[0,5,5,6,7,10][l]);});G.fx.push({k:'cone',x:px,y:py,dir,len,half:0.5,t:0.25,max:0.25,col:'#ffd3a8'});});}
+  // 循環扇
+  G.orbN=0;if(has('fan')){const l=L('fan'),n=[0,2,3,3,4,5][l];G.orbN=n;G.orbit+=dt*(l===5?4.4:3.3)*(2-cdMul());const R=27,d=[0,6,7,9,10,12][l],kb=l>=3?5:3;for(let i=0;i<n;i++){const a=G.orbit+i*Math.PI*2/n,bx=px+Math.cos(a)*R,by=py+Math.sin(a)*R;eachIn(bx,by,5,(e)=>{if(e.fanCd>0)return;e.fanCd=0.35;const ox=e.x-px,oy=e.y-py,od=Math.hypot(ox,oy)||1;hit(e,d,'fan',ox/od,oy/od,kb);});}}
+  // 手機／智慧生活組
+  if(has('phone')){const l=L('phone');every('phone',[0,1.6,1.5,1.4,1.15,1.0][l],()=>{const t=nearest(1,110*rm)[0];if(!t)return;const dir=norm(t.x-px,(t===G.boss?t.y-12:t.y-6)-py),len=[0,55,62,64,66,85][l]*rm;eachIn(px,py,len+10,e=>{if(inCone(e,px,py,dir,len,0.38)){hit(e,[0,9,11,14,15,18][l],'phone',0,0,0);if(e!==G.boss)e.stun=Math.max(e.stun,(e.type==='lost'?2:1)*[0,0.5,0.5,0.6,0.6,1.0][l]);}});G.fx.push({k:'cone',x:px,y:py,dir,len,half:0.38,t:0.18,max:0.18,col:'#ffffff'});});}
+  if(has('evoSmart')){every('smart',1.0,()=>{const r=70*rm;eachIn(px,py,r,e=>{hit(e,18,'evoSmart',0,0,0);if(e!==G.boss)e.stun=Math.max(e.stun,0.7);});G.fx.push({k:'ring',x:px,y:py,r,t:0.25,max:0.25,col:'#ffffff'});});}
+  // 藍牙耳機
+  G.earR=0;if(has('earbuds')){const l=L('earbuds'),r=[0,26,30,34,38,44][l];G.earR=r;eachIn(px,py,r,e=>{if(e!==G.boss)e.slowT=Math.max(e.slowT,0.15);e.earSlow=l===5?0.35:0.55;});every('ear',0.5,()=>eachIn(px,py,r,e=>hit(e,[0,2,3,4,4,6][l],'earbuds',0,0,0)));}
+  // 按摩用品
+  if(has('massager')){const l=L('massager');every('mass',[0,1.6,1.5,1.4,1.2,1.0][l],()=>{G.pads.push({x:px,y:py+6,r:[0,16,19,21,23,28][l],t:[0,3,3,3.5,3.5,4][l],dmg:[0,4,5,7,8,10][l],tick:0});});}
+  for(const q of G.pads){q.t-=dt;q.tick-=dt;if(q.tick<=0){q.tick=0.4;eachIn(q.x,q.y,q.r,e=>{hit(e,q.dmg,'massager',0,0,0);if(e!==G.boss)e.slowT=Math.max(e.slowT,0.5);});}}G.pads=G.pads.filter(q=>q.t>0);
+  // 智慧手錶
+  if(has('watch')){const l=L('watch');every('watch',[0,2.6,2.4,2.2,1.8,1.5][l],()=>{const r=[0,30,36,38,40,50][l]*rm;eachIn(px,py,r,e=>hit(e,[0,6,8,10,11,13][l],'watch',0,0,0));G.fx.push({k:'ring',x:px,y:py,r,t:0.3,max:0.3,col:'#8fcaf2'});});}
+  // 行動電源
+  if(has('powerbank')){const l=L('powerbank');every('pb',[0,1.2,1.15,1.0,0.95,0.8][l],()=>{let n=[0,1,2,2,3,4][l];let fx=px,fy=py,used=new Set();const pts=[[px,py]];for(let i=0;i<n;i++){const t=nearest(4,i===0?90*rm:55,fx,fy).find(e=>!used.has(e));if(!t)break;used.add(t);hit(t,[0,8,9,12,13,16][l],'powerbank',0,0,0);fx=t.x;fy=t===G.boss?t.y-12:t.y-6;pts.push([fx,fy]);for(const k in G.cd)if(k!=='pb')G.cd[k]-=0.08;}if(pts.length>1)G.fx.push({k:'chain',pts,t:0.2,max:0.2});});}
+  // 氣炸鍋
+  if(has('airfryer')){const l=L('airfryer');every('fry',[0,1.8,1.7,1.5,1.4,1.1][l],()=>{const n=[0,1,2,2,2,3][l];const c=nearest(12,115*rm);for(let i=0;i<n;i++){const t=c.length?c[Math.floor(Math.random()*c.length)]:null;const tx=t?t.x:px+rnd(-50,50),ty=t?(t===G.boss?t.y-12:t.y-6):py+rnd(-50,50);G.lobs.push({sx:px,sy:py,tx,ty,t:0,dur:0.55,r:[0,16,16,18,22,24][l],dmg:[0,12,13,16,17,22][l]});}});}
+  // 空氣清淨機
+  if(has('purifier')){const l=L('purifier');every('pur',[0,4.2,3.8,3.6,2.8,2.4][l],()=>{const t=nearest(1,110*rm)[0];G.vort.push({x:t?t.x:px+rnd(-40,40),y:t?t.y-6:py+rnd(-40,40),r:[0,18,22,22,24,30][l],t:2.6,tick:0,dmg:[0,5,5,8,8,10][l],pull:l===5?42:28});});}
+  for(const v of G.vort){v.t-=dt;v.tick-=dt;const doHit=v.tick<=0;if(doHit)v.tick=0.4;for(const e of G.en){if(e.dead)continue;const dx=v.x-e.x,dy=v.y-(e.y-6),d=Math.hypot(dx,dy)||1;if(d<v.r*1.7){e.x+=dx/d*v.pull*dt;e.y+=dy/d*v.pull*dt;}if(doHit&&d<v.r+e.r)hit(e,v.dmg,'purifier',0,0,0);}if(doHit&&G.boss&&Math.hypot(v.x-G.boss.x,v.y-G.boss.y+12)<v.r+G.boss.r)hit(G.boss,v.dmg,'purifier',0,0,0);}
+  G.vort=G.vort.filter(v=>v.t>0);
+  // 掃地機器人／掃拖機器人
+  const evoM=has('evoMop');const rn=evoM?3:(has('robot')?[0,1,1,1,2,3][L('robot')]:0);
+  while(G.drones.length<rn)G.drones.push({x:px+rnd(-10,10),y:py+rnd(-10,10),vx:0,vy:0,t:0});while(G.drones.length>rn)G.drones.pop();
+  for(const d of G.drones){const l=L('robot');const spd=evoM?100:[0,60,72,72,72,82][l];const t=(G.boss&&G.drones.indexOf(d)===0)?G.boss:nearest(1,120,d.x,d.y)[0];let tx,ty;if(t&&Math.hypot(t.x-px,t.y-py)<130){tx=t.x;ty=t===G.boss?t.y-12:t.y-6;}else{d.t+=dt;tx=px+Math.cos(d.t*1.3+G.drones.indexOf(d)*2)*30;ty=py+Math.sin(d.t*1.3+G.drones.indexOf(d)*2)*20;}
+    const v=norm(tx-d.x,ty-d.y);d.x+=v[0]*spd*dt;d.y+=v[1]*spd*dt;
+    eachIn(d.x,d.y,evoM?7:5,e=>{if(e.robCd>0)return;e.robCd=0.4;hit(e,evoM?14:[0,6,7,10,10,12][l],evoM?'evoMop':'robot',v[0],v[1],3);});
+    for(const g of G.gems){if(Math.abs(g.x-d.x)<8&&Math.abs(g.y-d.y)<8)g.pull=true;}
+    if(evoM)for(const g of G.gems)g.pull=true;}
+  // 吸塵器
+  G.vacOn=false;if(has('vacuum')){const l=L('vacuum');G.vacOn=true;const len=[0,34,38,40,44,52][l]*rm,half=[0,0.45,0.45,0.45,0.6,0.7][l];G.vacLen=len;G.vacHalf=half;
+    for(const e of G.en){if(e.dead)continue;if(inCone(e,px,py,G.face,len,half)){const v=norm(px-e.x,py-(e.y-6));e.x+=v[0]*22*dt;e.y+=v[1]*22*dt;}}
+    for(const g of G.gems){const dx=g.x-px,dy=g.y-py,d=Math.hypot(dx,dy);if(d<len*1.2){const a=Math.atan2(dy,dx)-Math.atan2(G.face[1],G.face[0]);if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<half+0.2)g.pull=true;}}
+    every('vac',0.3,()=>{eachIn(px,py,len+10,e=>{if(inCone(e,px,py,G.face,len,half))hit(e,[0,3,3,4,5,6][l],'vacuum',0,0,0);});});}
+  // 電視
+  if(has('tv')){const l=L('tv');every('tv',[0,3.0,2.8,2.6,2.2,2.0][l],()=>{G.tvZone={r:[0,34,40,42,44,54][l],t:[0,1.2,1.2,1.6,1.6,2.0][l],tick:0};});}
+  if(G.tvZone){const z=G.tvZone;z.t-=dt;z.tick-=dt;eachIn(px,py,z.r,e=>{if(e!==G.boss)e.stun=Math.max(e.stun,0.1);});if(z.tick<=0){z.tick=0.5;eachIn(px,py,z.r,e=>hit(e,3,'tv',0,0,0));}if(z.t<=0)G.tvZone=null;}
+  // 聲霸／家庭劇院
+  if(has('soundbar')){const l=L('soundbar');every('sb',[0,2.4,2.2,2.0,1.7,1.5][l],()=>soundRing([0,36,42,44,46,56][l],[0,5,6,8,8,10][l],[0,8,8,9,9,12][l],'soundbar'));}
+  if(has('evoTheater')){every('th',1.6,()=>soundRing(60,12,12,'evoTheater'));every('th2',6,()=>{G.stunAll=1.5;for(const e of G.en)e.stun=Math.max(e.stun,1.5);G.fx.push({k:'flash',t:0.35,max:0.35});});}
+  // 遊戲手把／雙人連線
+  const hn=has('evoCoop')?2:(has('gamepad')?1:0);while(G.helpers.length<hn)G.helpers.push({x:px,y:py,cd:0,state:'idle',tx:0,ty:0,dt:0});while(G.helpers.length>hn)G.helpers.pop();
+  G.comboT-=dt;if(G.comboT<=0)G.combo=0;
+  for(const h of G.helpers){const l=has('evoCoop')?5:L('gamepad'),mul=has('evoCoop')?1.3:1;h.cd-=dt;if(h.state==='idle'){const i=G.helpers.indexOf(h);const hx=px+(i?14:-14),hy=py-10;const v=norm(hx-h.x,hy-h.y);const d=Math.hypot(hx-h.x,hy-h.y);if(d>2){h.x+=v[0]*Math.min(d*6,90)*dt;h.y+=v[1]*Math.min(d*6,90)*dt;}
+      if(h.cd<=0){const t=(G.boss&&G.helpers.indexOf(h)===0&&Math.hypot(G.boss.x-h.x,G.boss.y-h.y)<140)?G.boss:nearest(1,115,h.x,h.y)[0];if(t){h.state='dash';h.tgt=t;h.dt=0.5;}h.cd=[0,0.9,0.75,0.7,0.65,0.5][l]*cdMul();}}
+    else{h.dt-=dt;const t=h.tgt;if(!t||t.dead||h.dt<=0){h.state='idle';continue;}const ty=t===G.boss?t.y-12:t.y-6;const v=norm(t.x-h.x,ty-h.y);h.x+=v[0]*230*dt;h.y+=v[1]*230*dt;if(Math.hypot(t.x-h.x,ty-h.y)<t.r+4){const cmax=[0,5,5,10,10,10][l];G.combo=Math.min(cmax,G.combo+1);G.comboT=1.5;const hd=[0,8,9,10,13,16][l]*mul*(1+G.combo*0.1),src=has('evoCoop')?'evoCoop':'gamepad';hit(t,hd,src,v[0],v[1],4);
+        // 撞擊餘波：周圍煩惱受到一半傷害
+        eachIn(t.x,ty,8,e=>{if(e!==t)hit(e,hd*0.5,src,0,0,0);});G.fx.push({k:'ring',x:t.x,y:ty,r:8,t:0.18,max:0.18,col:'#ffd95a'});h.state='idle';}}}
+  // 平板
+  if(has('tablet')){const l=L('tablet');every('tab',[0,2.0,1.9,1.8,1.5,1.3][l],()=>{const hh=[0,6,9,9,10,12][l],d=[0,10,11,14,15,18][l];const ys=l===5?[py-14,py+14]:[py];for(const yy of ys){const x0=G.x-W/2,x1=G.x+W/2;for(const e of G.en){if(!e.dead&&Math.abs(e.y-6-yy)<hh/2+e.r&&e.x>x0&&e.x<x1)hit(e,d,'tablet',0,0,0);}if(G.boss&&Math.abs(G.boss.y-12-yy)<hh/2+G.boss.r)hit(G.boss,d,'tablet',0,0,0);G.fx.push({k:'beam',y:yy,h:hh,t:0.2,max:0.2});}});}
+  // 擴散環
+  for(const r of G.rings){r.r+=r.spd*dt;eachIn(r.x,r.y,r.r,(e,dx,dy)=>{if(r.hitSet.has(e))return;const d=Math.hypot(dx,dy);if(d<r.r-10)return;r.hitSet.add(e);const n=norm(dx,dy);hit(e,r.dmg,r.src,n[0],n[1],r.kb);});}
+  G.rings=G.rings.filter(r=>r.r<r.R);
+  // 料理拋物線
+  for(const o of G.lobs){o.t+=dt;if(o.t>=o.dur&&!o.done){o.done=true;eachIn(o.tx,o.ty,o.r,e=>hit(e,o.dmg,'airfryer',0,0,0));G.fx.push({k:'ring',x:o.tx,y:o.ty,r:o.r,t:0.3,max:0.3,col:'#ffc247'});for(let i=0;i<6;i++){const a=Math.random()*6.28;G.parts.push({x:o.tx,y:o.ty,vx:Math.cos(a)*40,vy:Math.sin(a)*40,t:0.4,c:'#ffd95a'});}}}
+  G.lobs=G.lobs.filter(o=>!o.done);
+}
+function soundRing(R,d,kb,src){G.rings.push({x:G.x,y:G.y-9,r:4,R,spd:190,dmg:d,kb,src,hitSet:new Set(),col:'#b9dcff'});}
+function norm(x,y){const d=Math.hypot(x,y)||1;return[x/d,y/d];}
+
+// ===== 06-engine-loop.js =====
+// ===== 頭目 =====
+function updBoss(dt){const B=G.boss;if(!B)return;const d=BOSSDEF[B.id];B.flash-=dt;B.t+=dt;
+  const tx=G.x-B.x,ty=G.y-B.y,dist=Math.hypot(tx,ty)||1;
+  if(B.state==='walk'){if(B.stun<=0){B.x+=tx/dist*B.spd*dt;B.y+=ty/dist*B.spd*dt;}B.abi-=dt;if(B.abi<=0){B.abi=3.2;const ab=d.abil[Math.floor(B.t/3.2)%d.abil.length];useAbility(ab);}}
+  else if(B.state==='tele'){B.st-=dt;if(B.st<=0){B.state='dash';B.st=0.65;}}
+  else if(B.state==='dash'){B.st-=dt;B.x+=B.dir[0]*175*dt;B.y+=B.dir[1]*175*dt;if(B.st<=0)B.state='walk';}
+  B.stun-=dt;
+  if(Math.hypot(G.x-B.x,G.y-B.y+4)<B.r+5)hurtPlayer(B.state==='dash'?12:8,null);}
+function useAbility(ab){const B=G.boss;
+  if(ab==='summon'){const n=G.st.id==='sun'?8:6;for(let i=0;i<n;i++){const a=i/n*Math.PI*2;const type=BOSSDEF[B.id].minion==='mix'?pick(Object.keys(ENEMY)):BOSSDEF[B.id].minion;spawnEnemy(type,B.x+Math.cos(a)*22,B.y+Math.sin(a)*22);}}
+  else if(ab==='rain'){for(let i=0;i<5;i++){G.zones.push({x:G.x+rnd(-45,45)+(i===0?0:0),y:G.y-6+rnd(-40,40),r:14,t:1.1,max:1.1,dmg:9});}G.zones[G.zones.length-5].x=G.x;G.zones[G.zones.length-5].y=G.y-6;}
+  else if(ab==='dash'){B.state='tele';B.st=0.8;B.dir=norm(G.x-B.x,G.y-B.y);}}
+function bossDown(){const B=G.boss;for(let i=0;i<40;i++){const a=Math.random()*6.28,v=rnd(30,110);G.parts.push({x:B.x,y:B.y-12,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:rnd(0.5,1),c:i%3?'#ffd95a':'#ffffff'});}G.boss=null;G.bossDone=true;G.won=true;G.endT=1.6;for(const e of G.en){if(!e.dead)killEnemy(e);}G.en=[];}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+// ===== 玩家受傷 =====
+function hurtPlayer(d,deb){if(G.inv>0||G.won)return;const room=14-G.dmgWin;if(room<=0)return;const dd=Math.min(d,room);G.dmgWin+=dd;G.hp-=dd;G.hurt=0.25;G.inv=0.25;
+  if(deb){const counter={slow:'joint',blur:'lutein',cd:'fishoil'}[deb];if(!has(counter)){G.deb[deb]=3.5;}}}
+
+// ===== 主更新 =====
+function update(dt){G.dt=dt;
+  if(G.won){G.endT-=dt;tickFx(dt);if(G.endT<=0)finish(true);return;}
+  G.t+=dt;G.inv-=dt;G.hurt-=dt;G.dmgWinT+=dt;if(G.dmgWinT>=1){G.dmgWinT=0;G.dmgWin=0;}
+  for(const k in G.deb){G.deb[k]-=dt;if(G.deb[k]<=0)delete G.deb[k];}
+  // 移動
+  const [dx,dy]=inputDir();let spd=52*(1+[0,0.08,0.14,0.2,0.26,0.32][L('joint')]);if(G.deb.slow>0)spd*=0.6;G.x+=dx*spd*dt;G.y+=dy*spd*dt;
+  if(Math.abs(dx)+Math.abs(dy)>0.05){G.face=norm(dx,dy);G.walk+=dt*(8+4*Math.hypot(dx,dy));G.dir=Math.abs(dx)>Math.abs(dy)*0.8?(dx>0?'right':'left'):(dy<0?'back':'front');}else{G.dir='idle';G.walk+=dt*2;}
+  // 生成
+  const bossPhase=G.t>=STAGE_T;
+  if(bossPhase&&!G.boss&&!G.bossDone)spawnBoss();
+  let rate=Math.min(3.2,1.3+effSi()*0.12+G.t/55);if((G.t%30)>25)rate*=0.25;if(bossPhase)rate*=0.35;
+  const cap=90+Math.round(effSi()*8);G.spawnAcc+=rate*dt;while(G.spawnAcc>=1){G.spawnAcc--;if(G.en.length<cap){const p=ringPos();spawnEnemy(pick(stageTypes()),p[0],p[1]);}}
+  if(G.elites.length&&G.t>=G.elites[0]){G.elites.shift();const p=ringPos();spawnEnemy(pick(stageTypes()),p[0],p[1],true);banner('精英煩惱出現！','淨化它會掉出禮物盒');}
+  // 敵人
+  const cell=14,grid=new Map();for(const e of G.en){const k=((e.x/cell)|0)+','+((e.y/cell)|0);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(e);}
+  const slowR=has('evoDry')?G.auraR:0;
+  for(const e of G.en){if(e.dead)continue;const T=ENEMY[e.type];let tx=G.x-e.x,ty=G.y-e.y,d=Math.hypot(tx,ty)||1;let sp=e.spd;if(slowR&&d<slowR)sp*=0.5;if(e.slowT>0)sp*=e.earSlow||0.55;if(e.stun>0)sp=0;
+    let vx=tx/d*sp,vy=ty/d*sp;if(e.type==='lost'&&e.stun<=0){e.wob+=dt*4;vx+=-ty/d*Math.sin(e.wob)*22;vy+=tx/d*Math.sin(e.wob)*22;}
+    const k=((e.x/cell)|0)+','+((e.y/cell)|0);const nb=grid.get(k);if(nb)for(const o of nb){if(o===e)continue;const ox=e.x-o.x,oy=e.y-o.y,od=ox*ox+oy*oy,rr=(e.r+o.r)*0.85;if(od>0.01&&od<rr*rr){const q=Math.sqrt(od);vx+=ox/q*28;vy+=oy/q*28;}}
+    e.x+=(vx+e.kx*20)*dt;e.y+=(vy+e.ky*20)*dt;const damp=Math.pow(0.02,dt);e.kx*=damp;e.ky*=damp;e.flash-=dt;e.hitCd-=dt;e.fanCd-=dt;e.robCd-=dt;e.stun-=dt;e.slowT-=dt;
+    if(d>Math.hypot(W,H)*0.85&&!e.elite){const p=ringPos();e.x=p[0];e.y=p[1];}
+    if(d<e.r+6&&e.hitCd<=0&&e.stun<=0){e.hitCd=0.7;hurtPlayer(e.dmg,T.debuff);}}
+  updBoss(dt);
+  updWeapons(dt);
+  G.en=G.en.filter(e=>!e.dead);
+  // 區域攻擊
+  for(const z of G.zones){z.t-=dt;if(z.t<=0&&!z.done){z.done=true;if(Math.hypot(G.x-z.x,G.y-6-z.y)<z.r+4)hurtPlayer(z.dmg,G.st.id==='wed'?'cd':'slow');G.fx.push({k:'ring',x:z.x,y:z.y,r:z.r,t:0.25,max:0.25,col:'#ff8a7a'});}}G.zones=G.zones.filter(z=>!z.done);
+  // 寶石
+  const mag=26+[0,10,16,22,28,36][L('collagen')]+(has('evoDry')?25:0);
+  for(const g of G.gems){g.age+=dt;const gx=G.x-g.x,gy=G.y-8-g.y,d=Math.hypot(gx,gy)||1;if(d<mag||g.pull){g.pull=true;g.x+=gx/d*160*dt;g.y+=gy/d*160*dt;}if(d<6){g.got=true;G.xp+=g.v;}}
+  G.gems=G.gems.filter(g=>!g.got);
+  if(G.gems.length>160){const old=G.gems.splice(0,60);const sum=old.reduce((s,g)=>s+g.v,0);G.gems.push({x:old[0].x,y:old[0].y,v:sum,age:5,big:true});}
+  while(G.xp>=G.need){G.xp-=G.need;G.lvl++;G.need=Math.floor(6+G.lvl*3.6);G.pending++;}
+  for(const bx of G.boxes){if(Math.hypot(G.x-bx.x,G.y-6-bx.y)<11)bx.got=true;}
+  const opened=G.boxes.filter(x=>x.got);G.boxes=G.boxes.filter(x=>!x.got);
+  // sakuyo 補給：每 30 秒的喘息時段送一包隨身包，其中一次附上本關字母
+  if(!bossPhase&&G.t>=25+30*G.supN){const a=Math.random()*6.28,r=rnd(35,60);G.sups.push({k:'pack',x:G.x+Math.cos(a)*r,y:G.y+Math.sin(a)*r});
+    const ch=LETTERS[G.st.id];if(ch&&G.supN===G.letterWin&&!save.letters[G.st.id]){const a2=a+Math.PI*rnd(0.6,1.4),r2=rnd(85,110);G.sups.push({k:'letter',ch,x:G.x+Math.cos(a2)*r2,y:G.y+Math.sin(a2)*r2});banner('sakuyo 補給到了！','字母 '+ch+' 就在附近，跟著箭頭去拿');}
+    else banner('sakuyo 補給到了！','撿起隨身包補充元氣');G.supN++;}
+  if(G.buddy){G.buddyT-=dt;if(G.buddyT<=0){G.buddyT=20;const a=Math.random()*6.28;G.sups.push({k:'pack',x:G.x+Math.cos(a)*24,y:G.y+Math.sin(a)*24});}}
+  for(const s of G.sups){if(Math.hypot(G.x-s.x,G.y-6-s.y)<11){s.got=true;
+    if(s.k==='pack'){G.hp=Math.min(G.maxHp,G.hp+20);G.parts.push({x:G.x,y:G.y-20,vx:0,vy:-18,t:0.8,c:'#35a53a',star:true});}
+    else{G.gotLetter=true;const n=Object.keys(LETTERS).filter(k=>save.letters[k]).length+1;banner('拿到字母 '+s.ch+'！','過關就能收進 SAKUYO（'+n+' / 6）');}
+    for(let i=0;i<8;i++){const a=Math.random()*6.28;G.parts.push({x:s.x,y:s.y-4,vx:Math.cos(a)*40,vy:Math.sin(a)*40,t:0.4,c:i%2?'#f8b41b':'#ec6c1c'});}}}
+  G.sups=G.sups.filter(s=>!s.got);
+  // 回復
+  const P=L('probio');if(P)G.hp=Math.min(G.maxHp,G.hp+[0,0.5,1,1.5,2,2.5][P]*dt);
+  tickFx(dt);
+  if(G.hp<=0){if(has('sesame')&&!G.revived){G.revived=true;G.hp=G.maxHp*[0,0.4,0.55,0.7,0.85,1][L('sesame')];G.inv=2.5;shockwave(90);banner('睡一覺，元氣回來了！','幫助入睡發揮作用');}else{G.hp=0;finish(false);return;}}
+  if(opened.length){openBox();return;}
+  if(G.pending>0){G.pending--;levelUp();}
+}
+function tickFx(dt){for(const p of G.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=0.92;p.vy*=0.92;p.t-=dt;}G.parts=G.parts.filter(p=>p.t>0);for(const f of G.fx)f.t-=dt;G.fx=G.fx.filter(f=>f.t>0);}
+function shockwave(R){const px=G.x,py=G.y-9;for(const e of G.en){const dx=e.x-px,dy=e.y-6-py,d=Math.hypot(dx,dy)||1;if(d<R){e.kx+=dx/d*14;e.ky+=dy/d*14;e.stun=Math.max(e.stun,0.4);}}G.fx.push({k:'ring',x:px,y:py,r:R,t:0.35,max:0.35,col:'#ffffff'});}
+
+// ===== 繪製 =====
+function dotCircle(x,y,r,col,n,phase){b.fillStyle=col;n=n||Math.max(12,Math.floor(r*2.2));for(let i=0;i<n;i++){const a=i/n*Math.PI*2+(phase||0);b.fillRect(Math.round(x+Math.cos(a)*r),Math.round(y+Math.sin(a)*r),1,1);}}
+function draw(){
+  const cx=Math.round(G.x-W/2),cy=Math.round(G.y-H/2);const tiles=TILES[G.st.floor];
+  const tx0=Math.floor(cx/16),ty0=Math.floor(cy/16);
+  for(let ty=ty0;ty<=ty0+Math.ceil(H/16)+1;ty++)for(let tx=tx0;tx<=tx0+Math.ceil(W/16)+1;tx++){const hv=hash2(tx,ty)%24;b.drawImage(tiles[hv<11?0:hv<22?1:hv===22?2:3],tx*16-cx,ty*16-cy);}
+  const S=(x,y)=>[Math.round(x-cx),Math.round(y-cy)];const [ppx,ppy]=S(G.x,G.y-9);
+  // 地面效果
+  if(G.auraR){const col=has('evoDry')?'#9be3b0':'#bfe6ff';b.globalAlpha=0.16;b.fillStyle=col;b.beginPath();b.arc(ppx,ppy,G.auraR,0,Math.PI*2);b.fill();b.globalAlpha=1;dotCircle(ppx,ppy,G.auraR,col,0,G.t*0.6);}
+  if(G.earR){dotCircle(ppx,ppy,G.earR,'#c9b6f2',Math.floor(G.earR*1.2),-G.t);dotCircle(ppx,ppy,G.earR*((G.t*0.8)%1),'#e3d8ff',16,0);}
+  if(G.tvZone){b.globalAlpha=0.18;b.fillStyle='#ffe38a';b.beginPath();b.arc(ppx,ppy,G.tvZone.r,0,Math.PI*2);b.fill();b.globalAlpha=1;dotCircle(ppx,ppy,G.tvZone.r,'#ffd95a',0,G.t*2);}
+  for(const v of G.vort){const [vx,vy]=S(v.x,v.y);b.globalAlpha=Math.min(1,v.t*2)*0.9;for(let i=0;i<24;i++){const rr=(i/24)*v.r,a=i*0.7-G.t*6;b.fillStyle=i%3?'#d8f0ff':'#9be3b0';b.fillRect(Math.round(vx+Math.cos(a)*rr),Math.round(vy+Math.sin(a)*rr),1,1);}b.globalAlpha=1;}
+  for(const q of G.pads){const [qx,qy]=S(q.x,q.y),a=Math.min(1,q.t*2);b.globalAlpha=a*(0.22+0.08*Math.sin(G.t*9));b.fillStyle='#f2b8a0';b.beginPath();b.ellipse(qx,qy,q.r,q.r*0.62,0,0,Math.PI*2);b.fill();b.globalAlpha=a*0.7;b.strokeStyle='#c9b6f2';b.stroke();b.globalAlpha=1;}
+  for(const z of G.zones){const [zx,zy]=S(z.x,z.y);const k=1-z.t/z.max;b.globalAlpha=0.15+k*0.25;b.fillStyle='#ff6b5a';b.beginPath();b.arc(zx,zy,z.r*k,0,Math.PI*2);b.fill();b.globalAlpha=1;dotCircle(zx,zy,z.r,'#ff6b5a',24,0);}
+  if(G.vacOn){const d=G.face;for(let i=0;i<10;i++){const f=((G.t*2+i/10)%1);const a=Math.atan2(d[1],d[0])+(i%2?1:-1)*G.vacHalf*(1-f)*0.9;const r=G.vacLen*(1-f);b.fillStyle='#e3d8ff';b.fillRect(Math.round(ppx+Math.cos(a)*r),Math.round(ppy+Math.sin(a)*r),1,1);}}
+  for(const g of G.gems){const [gx,gy]=S(g.x,g.y);b.fillStyle=g.big?'#ff8ad0':g.v>=3?'#ffd95a':g.v>=2?'#9be3b0':'#7cc6f2';const s=g.big?2:1;b.fillRect(gx,gy-s,1,1+2*s);b.fillRect(gx-s,gy,1+2*s,1);b.fillStyle='#ffffff';b.fillRect(gx,gy-1,1,1);}
+  for(const s of G.sups){const [x,y]=S(s.x,s.y);const bob=Math.round(Math.sin(G.t*4+s.x));if(s.k==='pack')b.drawImage(PACK,x-3,y-9+bob);else{b.drawImage(LBOX[s.ch],x-4,y-11+bob);if(Math.floor(G.t*3)%2){b.fillStyle='#ffffff';b.fillRect(x+5,y-12+bob,1,1);b.fillRect(x-6,y-3+bob,1,1);}}}
+  for(const bx of G.boxes){const [x,y]=S(bx.x,bx.y);b.drawImage(BOX,x-5,y-8+Math.round(Math.sin(G.t*4)));}
+  // 角色依 y 排序
+  const ents=G.en.map(e=>({e,y:e.y}));ents.push({p:1,y:G.y});if(G.boss)ents.push({boss:1,y:G.boss.y});for(const d of G.drones)ents.push({d,y:d.y+9});for(const h of G.helpers)ents.push({h,y:h.y+9});
+  ents.sort((a,c)=>a.y-c.y);
+  for(const o of ents){
+    if(o.p){const [px,py]=S(G.x,G.y);b.fillStyle='rgba(0,0,0,0.18)';b.fillRect(px-7,py-1,14,2);if((G.hurt>0||G.inv>0.3)&&Math.floor(G.t*20)%2)continue;let fr;if(G.dir==='idle')fr=SPR.idle[Math.floor(G.walk)%2];else if(G.dir==='left'||G.dir==='right')fr=SPR[G.dir][Math.floor(G.walk)%8];else fr=SPR[G.dir][Math.floor(G.walk*0.6)%4];b.drawImage(fr,px-10,py-29);continue;}
+    if(o.boss){const B=G.boss;const [x,y]=S(B.x,B.y);const img=(B.flash>0?BFL:BSPR)[B.id];if(B.state==='tele'){b.strokeStyle='rgba(255,107,90,0.6)';b.beginPath();b.moveTo(x,y-12);b.lineTo(x+B.dir[0]*120,y-12+B.dir[1]*120);b.stroke();}
+      b.fillStyle='rgba(0,0,0,0.18)';b.fillRect(x-img.width/2+2,y,img.width-4,2);const bob=Math.round(Math.sin(G.t*4));b.drawImage(img,Math.round(x-img.width/2),y-img.height+bob);b.drawImage(CROWN,x-3,y-img.height-4+bob);continue;}
+    if(o.d){const [x,y]=S(o.d.x,o.d.y);b.drawImage(has('evoMop')?ROBOE:ROBO,x-3,y-3);continue;}
+    if(o.h){const [x,y]=S(o.h.x,o.h.y);b.drawImage(has('evoCoop')?PADY:PAD,x-4,y-3);continue;}
+    const e=o.e;const [x,y]=S(e.x,e.y);const img=(e.flash>0?EFL:ESPR)[e.type];const bob=e.stun>0?0:Math.round(Math.sin(G.t*6+e.wob)*0.8);const sz=e.elite?2:1;
+    b.fillStyle='rgba(0,0,0,0.15)';b.fillRect(x-Math.floor(img.width*sz/2)+1,y,img.width*sz-2,1);
+    b.drawImage(img,x-Math.floor(img.width*sz/2),y-img.height*sz+bob,img.width*sz,img.height*sz);
+    if(e.stun>0.15&&!G.tvZone&&Math.floor(G.t*8)%2){b.fillStyle='#ffd95a';b.fillRect(x-2,y-img.height*sz-2,1,1);b.fillRect(x+2,y-img.height*sz-3,1,1);}
+    if(e.elite){b.fillStyle='#1d2b3a';b.fillRect(x-10,y-img.height*2-5,20,3);b.fillStyle='#ff6b5a';b.fillRect(x-9,y-img.height*2-4,Math.max(0,18*e.hp/e.max),1);}}
+  // 旋風、拋物線、特效
+  if(G.orbN){for(let i=0;i<G.orbN;i++){const a=G.orbit+i*Math.PI*2/G.orbN;b.drawImage(BLADE,Math.round(ppx+Math.cos(a)*27)-3,Math.round(ppy+Math.sin(a)*27)-3);}}
+  for(const o of G.lobs){const k=o.t/o.dur;const x=o.sx+(o.tx-o.sx)*k,y=o.sy+(o.ty-o.sy)*k-Math.sin(k*Math.PI)*24;const [sx,sy]=S(x,y);b.drawImage(FOOD,sx-4,sy-2);}
+  for(const r of G.rings){const [rx,ry]=S(r.x,r.y);dotCircle(rx,ry,r.r,r.col,0,0);}
+  for(const f of G.fx){const a=f.t/f.max;b.globalAlpha=Math.max(0,a);
+    if(f.k==='cone'){const [x,y]=S(f.x,f.y);const base=Math.atan2(f.dir[1],f.dir[0]);b.fillStyle=f.col;for(let i=0;i<40;i++){const ang=base+(Math.random()*2-1)*f.half,rr=Math.random()*f.len;b.fillRect(Math.round(x+Math.cos(ang)*rr),Math.round(y+Math.sin(ang)*rr),1,1);}}
+    else if(f.k==='ring'){const [x,y]=S(f.x,f.y);dotCircle(x,y,f.r*(1.1-a*0.3),f.col,0,0);}
+    else if(f.k==='chain'){b.strokeStyle='#9be3b0';b.lineWidth=1;b.beginPath();f.pts.forEach((p,i)=>{const [x,y]=S(p[0],p[1]);if(i)b.lineTo(x+0.5,y+0.5);else b.moveTo(x+0.5,y+0.5);});b.stroke();}
+    else if(f.k==='beam'){const [,y]=S(0,f.y);b.fillStyle='#bfe6ff';b.fillRect(0,Math.round(y-f.h/2),W,f.h);b.fillStyle='#ffffff';b.fillRect(0,Math.round(y-1),W,2);}
+    else if(f.k==='flash'){b.fillStyle='#fff6d6';b.fillRect(0,0,W,H);}
+    b.globalAlpha=1;}
+  for(const p of G.parts){const [x,y]=S(p.x,p.y);b.fillStyle=p.c;if(p.star){b.fillRect(x-1,y,3,1);b.fillRect(x,y-1,1,3);}else b.fillRect(x,y,1,1);}
+  // 手錶方向提示
+  if(has('watch')||has('evoSmart')){const t=nearest(6);for(const e of t){const [x,y]=S(e.x,e.y);if(x>=0&&x<W&&y>=0&&y<H)continue;const a=Math.atan2(y-H/2,x-W/2);const ex=Math.max(4,Math.min(W-5,W/2+Math.cos(a)*W)),ey=Math.max(4,Math.min(H-5,H/2+Math.sin(a)*H));b.fillStyle='#ff6b5a';b.fillRect(Math.round(ex)-1,Math.round(ey)-1,3,3);b.fillStyle='#ffffff';b.fillRect(Math.round(ex),Math.round(ey),1,1);}}
+  // 字母方向提示
+  for(const s of G.sups){if(s.k!=='letter')continue;const [x,y]=S(s.x,s.y-5);if(x>=0&&x<W&&y>=0&&y<H)continue;const a=Math.atan2(y-H/2,x-W/2);const ex=Math.round(Math.max(6,Math.min(W-7,W/2+Math.cos(a)*W))),ey=Math.round(Math.max(6,Math.min(H-7,H/2+Math.sin(a)*H)));b.drawImage(MARK,ex-3,ey-3+Math.round(Math.sin(G.t*6)));}
+  // 夥伴飄在身後側邊，不遮住神歐迷的眼睛與天線
+  if(G.buddy){const side=G.face[0]>0?-1:1;b.drawImage(MARK,ppx+side*16-3,ppy-6+Math.round(Math.sin(G.t*3)*2)-3);}
+  // 視線模糊
+  if(G.deb.blur>0){const gr=b.createRadialGradient(W/2,H/2,Math.min(W,H)*0.18,W/2,H/2,Math.max(W,H)*0.6);gr.addColorStop(0,'rgba(60,70,90,0)');gr.addColorStop(1,'rgba(60,70,90,0.8)');b.fillStyle=gr;b.fillRect(0,0,W,H);}
+  // 搖桿
+  if(joy&&state==='play'){const f=DPR/K;const ox=Math.round(joy.ox*f),oy=Math.round(joy.oy*f);let jx=(joy.x-joy.ox)*f,jy=(joy.y-joy.oy)*f;const d=Math.hypot(jx,jy),m=12;if(d>m){jx=jx/d*m;jy=jy/d*m;}dotCircle(ox,oy,14,'rgba(255,255,255,0.75)',32,0);b.fillStyle='rgba(255,255,255,0.85)';b.beginPath();b.arc(ox+jx,oy+jy,4,0,Math.PI*2);b.fill();}
+  if(G.hurt>0){b.fillStyle='rgba(255,80,80,'+(G.hurt*0.8).toFixed(2)+')';b.fillRect(0,0,W,2);b.fillRect(0,H-2,W,2);b.fillRect(0,0,2,H);b.fillRect(W-2,0,2,H);}
+  sc.imageSmoothingEnabled=false;sc.drawImage(buf,0,0,W*K,H*K);
+}
+
+
+// ===== 07-ui.js =====
+// ===== 升級與禮物盒 =====
+const $=id=>document.getElementById(id);
+function iconCanvas(id,s){const c=document.createElement('canvas');c.width=12;c.height=12;drawIcon(c.getContext('2d'),id,0,0);c.style.width=(12*s)+'px';c.style.height=(12*s)+'px';c.className='pix';return c;}
+function spriteCanvas(src,s){const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);c.style.width=(src.width*s)+'px';c.style.height=(src.height*s)+'px';c.className='pix';return c;}
+function evoReady(){const out=[];for(const id in EVOS){if(has(id))continue;const [a,c]=EVOS[id].need;if(id==='evoCoop'){if(L('gamepad')>=5&&has('handheld'))out.push(id);}else if(L(a)>=5&&L(c)>=5)out.push(id);}return out;}
+function applyPick(id){
+  if(EVOS[id]){G.items[id]=1;const [a,c]=EVOS[id].need;if(id==='evoCoop')delete G.items.gamepad;else{delete G.items[a];delete G.items[c];}save.items[id]=true;}
+  else if(id==='heal'){G.hp=Math.min(G.maxHp,G.hp+35);}
+  else{G.items[id]=(G.items[id]||0)+1;save.items[id]=true;if(id==='probio')G.maxHp=100+(L('probio')>=5?20:L('probio')>=3?10:0);}
+  persist();refreshSlots();}
+function choices(){const out=evoReady().slice(0,1);const av=available();const pool=[];
+  const blocked=new Set();for(const ev in EVOS)if(has(ev)){EVOS[ev].need.forEach(n=>{if(!(ev==='evoCoop'&&n==='handheld'))blocked.add(n);});}
+  for(const id of av){if(blocked.has(id))continue;const it=ITEMS[id];const l=L(id);if(l>=5)continue;if(!l){if(it.kind==='w'&&wCount()>=4)continue;if(it.kind==='p'&&pCount()>=3)continue;}const w=G.st.items.includes(id)?2.2:1;pool.push([id,w]);}
+  // 前兩次升級保證出現本關的新好物
+  if(G.lvupCount<2){const fresh=pool.filter(p=>!has(p[0])&&G.st.items.includes(p[0]));if(fresh.length&&!out.length){const f=pick(fresh)[0];out.push(f);}}
+  while(out.length<3&&pool.length){let s=0;pool.forEach(p=>s+=p[1]);let r=Math.random()*s;let idx=0;for(let i=0;i<pool.length;i++){r-=pool[i][1];if(r<=0){idx=i;break;}}const id=pool.splice(idx,1)[0][0];if(!out.includes(id))out.push(id);}
+  if(!out.length)out.push('heal');return out;}
+function cardInfo(id){if(EVOS[id])return{icon:id,name:EVOS[id].name,tag:'進化',desc:EVOS[id].desc,evo:true};if(id==='heal')return{icon:'heal',name:'補充元氣',tag:'回復',desc:'元氣回復 35。'};const d=ITEMS[id],l=L(id);
+  const weak=d.weak?'　克制：'+d.weak.map(t=>ENEMY[t].name).join('、'):'';return{icon:id,name:d.name,tag:(l?'Lv '+l+' → '+(l+1):'新'+(d.kind==='w'?'好物':'保健')),desc:d.desc[l],sub:d.prod+'｜'+d.benefit+weak,p:d.kind==='p',sak:d.brand==='sakuyo'};}
+// sakuyo 標誌：四片花瓣組成的十字
+function sakuyoMark(s){const rows=['..OY..','..YO..','OYwwOY','YOwwYO','..OY..','..YO..'];const c=document.createElement('canvas');c.width=6;c.height=6;const x=c.getContext('2d');rows.forEach((r,j)=>{for(let i=0;i<6;i++){const col=IPAL[r[i]];if(col){x.fillStyle=col;x.fillRect(i,j,1,1);}}});c.style.width=(6*s)+'px';c.style.height=(6*s)+'px';c.className='pix';return c;}
+function openLevel(title,list){state='level';joy=null;keys.clear();$('lvTitle').textContent=title;const box=$('cards');box.innerHTML='';
+  list.forEach((id,i)=>{const info=cardInfo(id);const bt=document.createElement('button');bt.className='card'+(info.evo?' evo':'')+(info.p?' pas':'')+(info.sak?' sak':'');bt.appendChild(iconCanvas(info.icon,4));const tx=document.createElement('div');tx.className='ctext';const h=document.createElement('b');h.textContent=info.name;const tg=document.createElement('span');tg.className='tag';tg.textContent=info.tag;const p=document.createElement('p');p.textContent=info.desc;tx.append(h,tg);if(info.sak){const sb=document.createElement('span');sb.className='sakb';sb.append(sakuyoMark(2),'sakuyo');tx.appendChild(sb);}tx.appendChild(p);if(info.sub){const q=document.createElement('small');q.textContent=info.sub;tx.appendChild(q);}bt.appendChild(tx);const kb=document.createElement('span');kb.className='kbd';kb.textContent=String(i+1);bt.appendChild(kb);
+    bt.onclick=()=>{applyPick(id);G.lvupCount++;show('level',false);state='play';last=performance.now();shockwave(70);G.inv=Math.max(G.inv,1.5);if(G.pending>0){G.pending--;levelUp();}};box.appendChild(bt);});
+  show('level',true);}
+function levelUp(){openLevel('升級！選一樣商品',choices());}
+function openBox(){const ev=evoReady();if(ev.length)openLevel('禮物盒：進化時刻！',[ev[0]]);else{const c=choices().filter(x=>!EVOS[x]);openLevel('禮物盒：送你一樣',[c[0]||'heal']);}}
+
+// ===== HUD =====
+function refreshSlots(){const el=$('slots');el.innerHTML='';const ids=Object.keys(G.items);const ws=ids.filter(id=>EVOS[id]||ITEMS[id].kind==='w'),ps=ids.filter(id=>ITEMS[id]&&ITEMS[id].kind==='p');
+  const row=(list,max,cls)=>{const r=document.createElement('div');r.className='srow';for(let i=0;i<max;i++){const id=list[i];const d=document.createElement('div');d.className='slot '+cls+(id&&EVOS[id]?' evo':'');if(id){d.appendChild(iconCanvas(id,2));const s=document.createElement('span');s.textContent=EVOS[id]?'進化':(G.items[id]>=5?'MAX':'Lv'+G.items[id]);d.appendChild(s);}else d.classList.add('empty');r.appendChild(d);}el.appendChild(r);};
+  row(ws,4,'w');row(ps,3,'p');}
+let hudT=0;
+function hud(){ $('hpFill').style.width=Math.max(0,G.hp/G.maxHp*100)+'%';$('xpFill').style.width=(G.xp/G.need*100)+'%';$('lvl').textContent='Lv '+G.lvl;
+  $('stageLbl').textContent=G.st.day+'　'+G.st.name;const r=Math.max(0,STAGE_T-G.t);$('remain').textContent=G.boss||G.bossDone?'頭目戰':(Math.floor(r/60)+':'+String(Math.floor(r%60)).padStart(2,'0'));$('kills').textContent='淨化 '+G.kills;
+  const bb=$('bossBar');if(G.boss){bb.hidden=false;$('bossName').textContent=G.boss.name;$('bossFill').style.width=(G.boss.hp/G.boss.max*100)+'%';}else bb.hidden=true;
+  const db=$('debuffs');const ks=Object.keys(G.deb);db.innerHTML='';ks.forEach(k=>{const s=document.createElement('span');s.className='pill small';s.style.background=DEBUFF[k].col;s.style.color='#1D2B3A';s.textContent=DEBUFF[k].name;db.appendChild(s);});}
+let bannerT=null;function banner(a,c){$('bnA').textContent=a;$('bnB').textContent=c;$('banner').classList.add('show');clearTimeout(bannerT);bannerT=setTimeout(()=>$('banner').classList.remove('show'),2400);}
+function show(id,on){$(id).classList.toggle('show',on);}
+function pause(on){if(on){state='pause';joy=null;keys.clear();show('pauseOv',true);}else{state='play';show('pauseOv',false);last=performance.now();}}
+$('pauseBtn').onclick=()=>{if(state==='play')pause(true);};$('resumeBtn').onclick=()=>pause(false);
+$('quitBtn').onclick=()=>{show('pauseOv',false);finish(false);};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')pause(true);});
+
+// ===== 選關（洛克人式） =====
+const GRID=[0,1,2,'dex',null,3,6,5,4];
+let selIdx=0;
+function buildSelect(){const g=$('selGrid');g.innerHTML='';
+  GRID.forEach((v,i)=>{const cell=document.createElement('button');cell.className='sel';
+    if(v===null){cell.className='sel center';cell.disabled=true;const c=spriteCanvas(SPR.idle[0],3);cell.appendChild(c);const n=document.createElement('b');n.textContent='神歐迷';cell.appendChild(n);}
+    else if(v==='dex'){cell.appendChild(iconCanvas('evoSmart',4));const n=document.createElement('b');n.textContent='圖鑑';cell.appendChild(n);const s=document.createElement('span');s.textContent='商品與煩惱';cell.appendChild(s);cell.onclick=()=>{selIdx=i;openDex();};}
+    else{const st=STAGES[v];const locked=st.id==='sun'&&clearedCount()<6;const img=spriteCanvas(BSPR[st.id],3);if(locked)img.style.filter='brightness(0)';cell.appendChild(img);const n=document.createElement('b');n.textContent=st.day;cell.appendChild(n);const s=document.createElement('span');s.textContent=locked?'通關其他六天解鎖':st.name;cell.appendChild(s);if(save.cleared[st.id]){const m=document.createElement('i');m.className='done';m.textContent='✓';cell.appendChild(m);}if(locked)cell.classList.add('locked');
+      cell.onclick=()=>{selIdx=i;if(locked){banner('週日還沒開放','先完成週一到週六');return;}openIntro(v);};}
+    cell.onmouseenter=()=>{if(v!==null){selIdx=i;markSel();}};g.appendChild(cell);});
+  markSel();$('selProg').textContent='完成 '+clearedCount()+' / 6 天'+(save.cleared.sun?'　週日也完成了！':'');
+  const lw=$('selLetters');lw.innerHTML='';for(const k in LETTERS){const s=document.createElement('span');s.textContent=LETTERS[k];if(save.letters[k])s.className='got';lw.appendChild(s);}lw.title=allLetters()?'集滿了！sakuyo 元氣夥伴會定時送來隨身包':'在週一到週六的補給時間找到字母';}
+function markSel(){document.querySelectorAll('#selGrid .sel').forEach((c,i)=>c.classList.toggle('on',i===selIdx));}
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){keys.add(k);if(state==='play')e.preventDefault();}
+  if(state==='select'){const m={arrowleft:-1,arrowright:1,arrowup:-3,arrowdown:3,a:-1,d:1,w:-3,s:3}[k];if(m){e.preventDefault();let n=selIdx+m;if(n>=0&&n<9&&!(Math.abs(m)===1&&Math.floor(n/3)!==Math.floor(selIdx/3))){if(n===4)n+=m;if(n>=0&&n<9)selIdx=n;markSel();}}if(k==='enter'||k===' '){e.preventDefault();const c=document.querySelectorAll('#selGrid .sel')[selIdx];if(c)c.click();}}
+  else if(state==='level'&&['1','2','3'].includes(k)){const btn=document.querySelectorAll('#cards .card')[+k-1];if(btn)btn.click();}
+  else if(state==='intro'&&(k==='enter'||k===' ')){e.preventDefault();$('goBtn').click();}
+  if(k==='escape'||k==='p'){if(state==='play')pause(true);else if(state==='pause')pause(false);}});
+
+// ===== 關卡介紹 =====
+let introSi=0;
+function openIntro(si){introSi=si;state='intro';const st=STAGES[si],d=BOSSDEF[st.id];$('inDay').textContent=st.day+'　'+st.name;$('inBoss').textContent=d.name;$('inText').textContent=st.intro;
+  const bp=$('inBossImg');bp.innerHTML='';bp.appendChild(spriteCanvas(BSPR[st.id],4));
+  const en=$('inEnemies');en.innerHTML='';(st.id==='sun'?st.enemies:st.enemies).forEach(t=>{const w=document.createElement('div');w.className='chipx';w.appendChild(spriteCanvas(ESPR[t],3));const s=document.createElement('span');s.textContent=ENEMY[t].name;w.appendChild(s);en.appendChild(w);});
+  const it=$('inItems');it.innerHTML='';st.items.forEach(id=>{const w=document.createElement('div');w.className='chipx';w.appendChild(iconCanvas(id,3));const s=document.createElement('span');s.textContent=ITEMS[id].name;w.appendChild(s);it.appendChild(w);});
+  $('inWeak').textContent=d.weak.length?'弱點：'+d.weak.filter(w=>ITEMS[w]).map(w=>ITEMS[w].name).join('、'):'沒有弱點，全力以赴！';
+  const opts=starterOptions(st);introStarter=opts[0]||null;const sw=$('inStart');sw.innerHTML='';$('inStartH').hidden=$('inStartHint').hidden=!opts.length;
+  opts.forEach(id=>{const bt=document.createElement('button');bt.className='chipx pick'+(id===introStarter?' on':'');bt.appendChild(iconCanvas(id,3));const s=document.createElement('span');s.textContent=ITEMS[id].name;bt.appendChild(s);
+    if(ITEMS[id].weak.some(t=>st.enemies.includes(t))){const k=document.createElement('em');k.textContent='克制';bt.appendChild(k);}
+    bt.onclick=()=>{introStarter=id;sw.querySelectorAll('.pick').forEach(b=>b.classList.toggle('on',b===bt));};sw.appendChild(bt);});
+  $('inStartHint').textContent=opts.length>1?'通關的天數越多，出發商品越多，煩惱也會稍微變強。':'通關其他天，就能帶那天的商品出發。';
+  show('select',false);show('intro',true);}
+let introStarter=null;
+$('goBtn').onclick=()=>{show('intro',false);startStage(introSi,introStarter);};
+$('backBtn').onclick=()=>{show('intro',false);toSelect();};
+function startStage(si,starter){['select','intro','dex','result','level','pauseOv'].forEach(i=>show(i,false));newRun(si,starter);refreshSlots();state='play';$('hud').hidden=false;last=performance.now();banner(G.st.day+'　'+G.st.name,G.st.intro);if(document.activeElement)document.activeElement.blur();}
+function toSelect(){state='select';$('hud').hidden=true;show('result',false);show('dex',false);show('intro',false);buildSelect();show('select',true);}
+
+// ===== 圖鑑 =====
+function openDex(){state='dex';const ig=$('dexItems');ig.innerHTML='';
+  const addCell=(host,imgEl,title,lines,un)=>{const c=document.createElement('div');c.className='cell'+(un?'':' locked');c.appendChild(imgEl);const b1=document.createElement('b');b1.textContent=un?title:'？？？';c.appendChild(b1);lines.forEach(t=>{const s=document.createElement('span');s.textContent=un?t:'';c.appendChild(s);});host.appendChild(c);};
+  for(const id in ITEMS){const it=ITEMS[id];addCell(ig,iconCanvas(id,4),it.name,[it.prod,'好處：'+it.benefit,it.weak?'克制：'+it.weak.map(t=>ENEMY[t].name).join('、'):(it.counter?'免疫：'+DEBUFF[it.counter].name:'')],!!save.items[id]);}
+  for(const id in EVOS)addCell(ig,iconCanvas(id,4),EVOS[id].name,['進化：'+EVOS[id].need.map(n=>ITEMS[n].name).join('＋')],!!save.items[id]);
+  const eg=$('dexEnemies');eg.innerHTML='';for(const t in ENEMY){const counters=Object.keys(ITEMS).filter(id=>ITEMS[id].weak&&ITEMS[id].weak.includes(t)).map(id=>ITEMS[id].name);addCell(eg,spriteCanvas(ESPR[t],4),ENEMY[t].name,['怕：'+(counters.join('、')||'沒有特別弱點'),ENEMY[t].debuff?'碰到會'+DEBUFF[ENEMY[t].debuff].name:''],!!save.enemies[t]);}
+  show('select',false);show('dex',true);}
+$('dexClose').onclick=toSelect;
+
+// ===== 08-card.js =====
+// ===== 結算與明細卡 =====
+let resultInfo=null;
+function finish(won){if(state==='result')return;state='result';joy=null;const st=G.st;let unlocked=[],newLetter=null;
+  if(won){if(!save.cleared[st.id]&&st.id!=='sun')unlocked=st.items.slice();save.cleared[st.id]=true;if(G.gotLetter&&LETTERS[st.id]&&!save.letters[st.id]){save.letters[st.id]=true;newLetter=LETTERS[st.id];}const tt=Math.floor(G.t);if(!save.best[st.id]||tt<save.best[st.id])save.best[st.id]=tt;}
+  persist();resultInfo={won,unlocked,newLetter};setTimeout(showResult,won?200:700);}
+async function buildCard(){try{await document.fonts.load('800 20px "Chiron GoRound TC"');}catch(e){}
+  const {won,unlocked}=resultInfo;const st=G.st;const items=Object.entries(G.items);const CW=600,CH=960+items.length*44+(unlocked.length?90:0);
+  const cc=document.createElement('canvas');cc.width=CW*2;cc.height=CH*2;const c=cc.getContext('2d');c.scale(2,2);c.imageSmoothingEnabled=false;
+  const F='"Chiron GoRound TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+  c.fillStyle='#DCEEFA';c.fillRect(0,0,CW,CH);c.fillStyle='#FFFFFF';c.beginPath();c.moveTo(40,40);for(let x=40;x<560;x+=20){c.lineTo(x+10,30);c.lineTo(x+20,40);}c.lineTo(560,CH-40);for(let x=560;x>40;x-=20){c.lineTo(x-10,CH-30);c.lineTo(x-20,CH-40);}c.closePath();c.fill();c.strokeStyle='#1D2B3A';c.lineWidth=3;c.stroke();
+  const dash=y=>{c.save();c.strokeStyle='#B8C4CF';c.lineWidth=2;c.setLineDash([8,7]);c.beginPath();c.moveTo(70,y);c.lineTo(530,y);c.stroke();c.restore();};
+  c.textAlign='center';c.fillStyle='#0A6CC2';c.font='800 18px '+F;c.fillText('神腦生活',300,86);c.fillStyle='#1D2B3A';c.font='800 32px '+F;c.fillText('神歐迷的一週',300,126);c.fillStyle='#5A6878';c.font='600 16px '+F;c.fillText(st.day+'・'+st.name+'　淨化明細卡',300,152);dash(174);
+  const d=new Date(),ds=d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0');
+  const row=(l,r,y)=>{c.textAlign='left';c.fillStyle='#5A6878';c.font='600 17px '+F;c.fillText(l,76,y);c.textAlign='right';c.fillStyle='#1D2B3A';c.font='800 17px '+F;c.fillText(r,524,y);};
+  const tt=Math.floor(G.t);row('日期',ds,206);row('花費時間',Math.floor(tt/60)+' 分 '+(tt%60)+' 秒',236);row('淨化煩惱',G.kills+' 個',266);row('用對商品命中',G.weakHits+' 次',296);dash(318);
+  c.textAlign='center';c.fillStyle=won?'#35A53A':'#1D2B3A';c.font='800 30px '+F;c.fillText(won?'打倒'+BOSSDEF[st.id].name+'！':'神歐迷累壞了',300,364);c.fillStyle='#5A6878';c.font='600 16px '+F;c.fillText(won?st.day+'的煩惱都淨化了':'下次挑對商品再試一次',300,390);dash(412);
+  c.textAlign='left';c.fillStyle='#1D2B3A';c.font='800 19px '+F;c.fillText('使用的商品',76,446);let y=488;
+  const drawRow=(id,name,right)=>{c.fillStyle='#FFF6D6';c.beginPath();c.arc(96,y-7,19,0,Math.PI*2);c.fill();c.save();c.translate(84,y-19);c.scale(2,2);drawIcon(c,id,0,0);c.restore();c.textAlign='left';c.fillStyle='#1D2B3A';c.font='600 18px '+F;c.fillText(name,126,y);c.textAlign='right';c.font='800 18px '+F;c.fillText(right,524,y);y+=44;};
+  items.forEach(([id,l])=>{if(EVOS[id])drawRow(id,EVOS[id].name+'（進化）','★');else drawRow(id,ITEMS[id].name+(ITEMS[id].prod!==ITEMS[id].name?'｜'+ITEMS[id].prod:''),l>=5?'MAX':'Lv '+l);});
+  if(unlocked.length){y+=4;c.textAlign='left';c.fillStyle='#35A53A';c.font='800 17px '+F;c.fillText('新解鎖商品：',76,y);c.fillStyle='#1D2B3A';c.font='600 16px '+F;const txt=unlocked.map(i=>ITEMS[i].name).join('、');c.fillText(txt,76,y+26);c.fillStyle='#5A6878';c.font='600 14px '+F;c.fillText('之後每一關都能抽到這些商品',76,y+50);y+=78;}
+  y-=10;dash(y);y+=24;
+  const top=items.filter(([id])=>EVOS[id]||ITEMS[id].kind==='w').sort((a,c2)=>c2[1]-a[1])[0];const title=won?(items.some(([id])=>EVOS[id])?'進化大師':st.day+'淨化王'):'明天再加油';
+  c.fillStyle='#EEF6EC';c.fillRect(76,y,448,84);c.strokeStyle='#35A53A';c.lineWidth=3;c.strokeRect(76,y,448,84);c.textAlign='center';c.fillStyle='#5A6878';c.font='600 15px '+F;c.fillText('你的稱號',300,y+30);c.fillStyle='#35A53A';c.font='800 30px '+F;c.fillText(title,300,y+68);y+=110;
+  const spr=OMI.idle[0];for(let j=0;j<spr.h;j++)for(let i=0;i<spr.w;i++){const col=spr.g[j*spr.w+i];if(!col)continue;c.fillStyle=col;c.fillRect(90+i*6,y+j*6,6,6);}
+  const msg=won?(top?'今天靠'+(EVOS[top[0]]?EVOS[top[0]].name:ITEMS[top[0]].name)+'幫了大忙，謝謝你！':'謝謝你陪我度過這一天！'):'先看看圖鑑，找出克制這些煩惱的商品吧！';
+  c.font='600 17px '+F;const lines=[];let line='';for(const ch of msg){if(c.measureText(line+ch).width>240&&line){lines.push(line);line=ch;}else line+=ch;}if(line)lines.push(line);
+  const bx=250,by=y+30,bh=lines.length*26+28;c.fillStyle='#F2F8FD';c.fillRect(bx,by,280,bh);c.strokeStyle='#1D2B3A';c.lineWidth=2.5;c.strokeRect(bx,by,280,bh);c.textAlign='left';c.fillStyle='#1D2B3A';lines.forEach((l,i)=>c.fillText(l,bx+20,by+34+i*26));
+  y+=200;let bxr=150;for(let i=0;i<48&&bxr<450;i++){const w=1+((i*7+G.kills)%4);c.fillStyle='#1D2B3A';c.fillRect(bxr,y,w,40);bxr+=w+3;}
+  c.textAlign='center';c.fillStyle='#5A6878';c.font='600 14px '+F;c.fillText('每天都來陪神歐迷淨化一下',300,y+66);return cc;}
+let cardCanvas=null;
+async function showResult(){cardCanvas=await buildCard();$('cardImg').src=cardCanvas.toDataURL('image/png');$('resTitle').textContent=resultInfo.won?'過關！':'再挑戰一次吧';show('result',true);const nl=resultInfo.newLetter;if(nl)setTimeout(()=>banner('收集到字母 '+nl+'！',allLetters()?'集滿 SAKUYO：sakuyo 元氣夥伴會陪你出發！':'SAKUYO 收集 '+Object.keys(LETTERS).filter(k=>save.letters[k]).length+' / 6'),400);}
+let downloads=null;$('dlBtn').hidden=true;
+if(window.claude&&typeof window.claude.use==='function'){window.claude.use('downloads').then(d=>{downloads=d;if(d){$('dlBtn').hidden=false;$('saveHint').hidden=true;}else $('saveHint').hidden=false;}).catch(()=>{$('saveHint').hidden=false;});}else $('saveHint').hidden=false;
+$('dlBtn').onclick=async()=>{if(!downloads||!cardCanvas)return;const blob=await new Promise(r=>cardCanvas.toBlob(r,'image/png'));try{await downloads.save({filename:'神歐迷淨化明細卡.png',data:blob});}catch(e){$('dlBtn').hidden=true;$('saveHint').hidden=false;}};
+$('againBtn').onclick=()=>{show('result',false);startStage(G.si,G.starter);};$('selBtn').onclick=toSelect;
+
+// ===== 迴圈 =====
+let last=performance.now();
+function loop(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;
+  if(state==='play'){update(dt);hudT-=dt;if(hudT<=0){hud();hudT=0.1;}}
+  if(G&&['play','level','pause','result'].includes(state))draw();
+  requestAnimationFrame(loop);}
+toSelect();requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
